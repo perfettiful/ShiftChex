@@ -1,0 +1,39 @@
+---
+title: Rule structure - Strategy, Composite, and a Factory
+---
+classDiagram
+    direction TB
+    class RuleFactory {
+        <<factory>>
+        +rulesFor(org) Rule
+    }
+    class Rule {
+        <<interface>>
+        +check(ctx) Violation[]
+    }
+    class RuleEngine {
+        -root Rule
+        +validate(ctx)
+    }
+    class CompositeRule {
+        -children Rule[]
+        +add(r Rule)
+        +check(ctx)
+    }
+    class RestRule
+    RestRule : +check(ctx)
+    class QualificationRule
+    QualificationRule : +check(ctx)
+
+    RuleFactory ..> Rule : creates
+    RuleEngine --> "1" Rule : holds one
+
+    %% The diamond belongs on the whole, so it sits at CompositeRule.
+    %% The original PNG has it at the Rule end, which reads backwards.
+    CompositeRule o-- "*" Rule : children
+
+    Rule <|.. CompositeRule
+    Rule <|.. RestRule
+    Rule <|.. QualificationRule
+
+    note for RuleEngine "The engine holds one Rule. In practice that Rule<br>is a CompositeRule holding the blocking rules,<br>which holds another CompositeRule for the warnings.<br>Nothing above the engine knows the difference."

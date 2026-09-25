@@ -1,0 +1,48 @@
+---
+title: Proposed Architecture - ShiftChex
+---
+%% Not UML. A layered block diagram, drawn as a flowchart.
+%% Arrows join individual boxes, not the layers themselves. Linking a whole
+%% subgraph makes Mermaid stack its contents in one column.
+flowchart TB
+    subgraph client["Client Tier"]
+        C1["Manager Workstation<br/>Desktop browser, schedule builder"]
+        C2["Employee Mobile Browser<br/>Schedule, swaps, availability"]
+        C3["Shift Lead Tablet<br/>Today's roster, call-outs"]
+    end
+    subgraph presentation["Presentation Layer"]
+        P1["Schedule Builder UI<br/>Client-side grid, live validation"]
+        P2["Employee Portal UI<br/>Responsive server-rendered views"]
+        P3["Reporting UI<br/>Coverage and labor dashboards"]
+    end
+    subgraph application["Application Layer"]
+        A1["Scheduling Service"]
+        A2["Swap and Time Off Service"]
+        A3["Reporting Service"]
+        A4["Notification Service"]
+        ENGINE["Rule Validation Engine<br/>Availability, rest, qualification, coverage,<br/>overtime, budget, advance notice"]
+    end
+    subgraph domainLayer["Domain Layer"]
+        DM["Domain Model<br/>Employee · Role · Qualification · Availability ·<br/>TimeOffRequest · SchedulePeriod · Shift · SwapRequest"]
+    end
+    subgraph data["Data Tier"]
+        T1["Repository /<br/>Data Access Layer"]
+        T2["Relational Database<br/>Employees, shifts, swaps, audit"]
+        T3["Policy Configuration Store<br/>Rule thresholds per organization"]
+    end
+    subgraph cross["Cross-Cutting Concerns"]
+        X1["Authentication and<br/>Role-Based Authorization"]
+        X2["Audit Logging<br/>Post-publish change history"]
+        X3["Session and<br/>Error Handling"]
+        X4["Configuration<br/>Management"]
+    end
+
+    C2 --> P2 --> A2
+    %% Invisible links keep the four services on one row with the engine below.
+    P2 ~~~ A1 & A3 & A4
+    A2 ~~~ ENGINE
+    ENGINE --> DM --> T2
+    X1 ~~~ X2 ~~~ X3 ~~~ X4
+    X3 -.-> ENGINE
+
+    style ENGINE fill:#fdf3d8,stroke:#8a6d1f,stroke-width:2px

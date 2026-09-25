@@ -1,0 +1,63 @@
+---
+title: Design Class Diagram - Elaboration 1
+---
+classDiagram
+    direction TB
+    class ScheduleController {
+        +buildDraft(periodId)
+        +assign(shiftId, empId)
+        +validate(periodId)
+        +publish(periodId)
+    }
+    class SchedulePeriod {
+        -status
+        -budget
+        +addShift(s)
+        +shifts()
+        +projectedCost()
+    }
+    class RuleEngine {
+        -rules Rule[]
+        +validate(period)
+        +validateAssignment(shift, emp)
+    }
+    class Violation {
+        -severity
+        -message
+        -shiftRef
+    }
+    class Shift {
+        -date
+        -startTime
+        -status
+        +assign(emp)
+        +isCovered()
+    }
+    class Rule {
+        <<interface>>
+        +check(ctx) Violation[]
+    }
+    class AvailabilityRule
+    AvailabilityRule : +check(ctx)
+    class RestRule
+    RestRule : +check(ctx)
+    class QualificationRule
+    QualificationRule : +check(ctx)
+    class OvertimeRule
+    OvertimeRule : +check(ctx)
+    class CoverageRule
+    CoverageRule : +check(ctx)
+
+    ScheduleController --> RuleEngine : uses
+    ScheduleController --> SchedulePeriod : manages
+    SchedulePeriod "1" --> "*" Shift : contains
+    RuleEngine "1" --> "*" Rule : holds
+    RuleEngine ..> Violation : creates
+
+    %% Interface realization is a dashed line with a hollow triangle.
+    %% The original PNG draws these solid, which is the notation for inheritance.
+    Rule <|.. AvailabilityRule
+    Rule <|.. RestRule
+    Rule <|.. QualificationRule
+    Rule <|.. OvertimeRule
+    Rule <|.. CoverageRule

@@ -1,0 +1,18 @@
+---
+title: "Sequence: Claim Posted Shift (UC-05)"
+---
+sequenceDiagram
+    actor Employee
+    participant SW as :SwapController
+    participant RE as :RuleEngine
+    participant SR as :SwapRequest
+    Employee->>SW: claimShift(shiftId)
+    SW->>RE: validateAssignment(shift, claimer)
+    RE-->>SW: violations
+    alt no blocking violation
+        SW->>SR: setClaimed(claimer)
+        SR-->>SW: ok
+        SW-->>Employee: pending manager approval
+    else blocking violation
+        SW-->>Employee: refused, with the failing rule
+    end

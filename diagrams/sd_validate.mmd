@@ -1,0 +1,19 @@
+---
+title: "Sequence: Validate Schedule (UC-07)"
+---
+sequenceDiagram
+    actor Manager
+    participant SC as :ScheduleController
+    participant SP as :SchedulePeriod
+    participant RE as :RuleEngine
+    participant R as :Rule
+    Manager->>SC: validate(periodId)
+    SC->>SP: shifts()
+    SP-->>SC: shift list
+    SC->>RE: validate(period)
+    loop once for each of the five rule objects the engine holds
+        RE->>R: check(ctx)
+        R-->>RE: violations
+    end
+    RE-->>SC: all violations
+    SC-->>Manager: violations grouped by shift

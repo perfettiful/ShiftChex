@@ -1,0 +1,10 @@
+---
+title: "SSD: Claim Posted Shift (UC-05)"
+---
+sequenceDiagram
+    actor Employee
+    participant System as :System
+    Employee->>System: viewSwapBoard()
+    System-->>Employee: shifts this employee may claim
+    Employee->>System: claimShift(shiftId)
+    System-->>Employee: claim accepted and pending, or refused with reason

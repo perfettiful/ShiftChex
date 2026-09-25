@@ -1,0 +1,30 @@
+---
+title: Package Diagram - Logical Architecture
+---
+%% Mermaid has no package diagram type. Subgraphs stand in for packages
+%% and the dashed arrows are the «use» dependencies. They run between the
+%% same boxes as in the PNG.
+flowchart TB
+    subgraph ui
+        ScheduleBuilderView
+        EmployeePortalView
+        ReportView
+    end
+    subgraph application
+        ScheduleController
+        SwapController
+        RuleEngine
+    end
+    subgraph domain
+        D1["Employee, Role, Qualification"]
+        D2["Shift, SchedulePeriod"]
+        D3["SwapRequest, Violation"]
+    end
+    subgraph persistence
+        EmployeeRepository
+        ScheduleRepository
+    end
+
+    ScheduleBuilderView -. «use» .-> ScheduleController
+    ScheduleController -. «use» .-> D1
+    D1 -. «use» .-> EmployeeRepository

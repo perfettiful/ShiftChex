@@ -1,0 +1,35 @@
+---
+title: "Activity: Claim a Posted Shift"
+---
+%% Mermaid has no activity diagram type. Subgraphs stand in for the three
+%% swimlanes. The solid dot is the start and the rings are the ends.
+flowchart TB
+    subgraph Employee
+        start((" ")):::startNode
+        A1("Open the swap board")
+        A3("Select a shift and request to claim it")
+    end
+    subgraph ShiftChex
+        A2("List the shifts this employee may claim")
+        A4("Run the rule check against the claimer")
+        D1{"All blocking rules pass?"}
+        A5("Refuse the claim and show the failing rule")
+        A6("Create SwapRequest in Claimed state")
+        A8("Reassign the shift")
+        stop1(((" "))):::stopNode
+        stop3(((" "))):::stopNode
+    end
+    subgraph Manager
+        A7("Review the request")
+        D2{"Approve?"}
+        stop2(((" "))):::stopNode
+    end
+
+    start --> A1 --> A2 --> A3 --> A4 --> D1
+    D1 -->|no| A5 --> stop1
+    D1 -->|yes| A6 --> A7 --> D2
+    D2 -->|deny| stop2
+    D2 -->|approve| A8 --> stop3
+
+    classDef startNode fill:#222222,stroke:#222222
+    classDef stopNode fill:#ffffff,stroke:#222222,stroke-width:3px

@@ -1,0 +1,33 @@
+---
+title: Use Case Diagram - ShiftChex
+---
+%% Mermaid has no UML use case diagram type. This is the usual workaround:
+%% stadium shapes for use cases, a subgraph for the system boundary,
+%% and dashed arrows for the include relationships. Both actors sit on the
+%% left so the three include arrows can all flow the same direction.
+flowchart LR
+    Employee["Employee<br/>(actor)"]:::actor
+    Manager["Manager<br/>(actor)"]:::actor
+
+    subgraph ShiftChex
+        UC01(["UC-01 Declare Weekly Availability"])
+        UC02(["UC-02 Request Time Off"])
+        UC03(["UC-03 View My Schedule"])
+        UC04(["UC-04 Post Shift for Swap"])
+        UC05(["UC-05 Claim Posted Shift"])
+        UC06(["UC-06 Build Draft Schedule"])
+        UC08(["UC-08 Publish Schedule"])
+        UC09(["UC-09 Approve or Deny Swap"])
+        UC10(["UC-10 Approve or Deny Time Off"])
+        UC11(["UC-11 View Coverage and Labor Report"])
+        UC07(["UC-07 Validate Schedule Against Rules"])
+    end
+
+    Employee --- UC01 & UC02 & UC03 & UC04 & UC05
+    Manager --- UC06 & UC08 & UC09 & UC10 & UC11
+
+    UC05 -. «include» .-> UC07
+    UC06 -. «include» .-> UC07
+    UC08 -. «include» .-> UC07
+
+    classDef actor fill:#ffffff,stroke:#333333,stroke-width:2px,font-weight:bold

@@ -1,0 +1,14 @@
+---
+title: "State Machine: Shift"
+---
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Published : publish
+    Published --> OpenForSwap : postForSwap
+    OpenForSwap --> Claimed : claim
+    Claimed --> Published : approve / reassign
+    Claimed --> OpenForSwap : deny
+    Published --> Worked : shift ends, attended
+    Published --> NoShow : shift ends, absent
+    Worked --> [*]
+    NoShow --> [*]

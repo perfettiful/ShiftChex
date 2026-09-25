@@ -1,0 +1,17 @@
+---
+title: "State Machine: SwapRequest"
+---
+stateDiagram-v2
+    [*] --> Posted
+    Posted --> Claimed : claim
+    Posted --> Withdrawn : withdraw
+    Claimed --> Approved : approve
+    Claimed --> Denied : deny
+    Claimed --> Expired : shift start passes
+    Approved --> [*]
+    Denied --> [*]
+
+    note right of Posted
+        A claim that fails a blocking rule is refused
+        before a SwapRequest reaches Claimed.
+    end note

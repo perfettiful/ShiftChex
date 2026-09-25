@@ -1,0 +1,15 @@
+---
+title: "SSD: Publish Schedule (UC-08)"
+---
+sequenceDiagram
+    actor Manager
+    participant System as :System
+    Manager->>System: buildDraft(periodId)
+    loop once for every shift the manager fills
+        Manager->>System: assign(shiftId, employeeId)
+        System-->>Manager: assignment accepted or violations
+    end
+    Manager->>System: validate(periodId)
+    System-->>Manager: violation list
+    Manager->>System: publish(periodId)
+    System-->>Manager: published, employees notified

@@ -1,0 +1,62 @@
+---
+title: Domain Model - ShiftChex
+---
+%% Conceptual classes only. No methods and no arrowheads, because a domain
+%% model describes the real world, not software objects.
+classDiagram
+    direction LR
+    class Employee {
+        name
+        hireDate
+        dateOfBirth
+        status
+    }
+    class Availability {
+        weekday
+        startTime
+        endTime
+        effectiveFrom
+    }
+    class TimeOffRequest {
+        startDate
+        endDate
+        reason
+        status
+    }
+    class Qualification {
+        hourlyRate
+        certExpiresOn
+    }
+    class Role {
+        name
+        requiresCert
+    }
+    class Shift {
+        date
+        startTime
+        endTime
+        status
+    }
+    class SchedulePeriod {
+        startDate
+        endDate
+        status
+        budget
+    }
+    class SwapRequest {
+        postedOn
+        status
+        decidedOn
+    }
+
+    %% Relationship order steers Mermaid's layout. In this order no line
+    %% passes behind a class box.
+    Employee "1" -- "*" Availability : declares
+    Employee "1" -- "*" TimeOffRequest : submits
+    Employee "1" -- "1..*" Qualification : holds
+    Employee "1" -- "*" SwapRequest : posts / claims
+    Qualification "*" -- "1" Role : for
+    Shift "*" -- "0..1" Employee : assigned to
+    Shift "1" -- "0..*" SwapRequest : subject of
+    Shift "*" -- "1" Role : requires
+    Shift "*" -- "1" SchedulePeriod : belongs to
