@@ -1,11 +1,18 @@
 // domain classes, no imports from other folders
 
+const addDays = (date, n) => {
+  const d = new Date(date + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
 class Employee {
   constructor({ id, name, dateOfBirth, hireDate, status = "active", maxHoursPreference = null }) {
     Object.assign(this, { id, name, dateOfBirth, hireDate, status, maxHoursPreference });
     this.qualifications = [];
     this.availability = [];
     this.timeOff = [];
+    this.certs = [];
   }
   ageOn(date) {
     const d = new Date(date), b = new Date(this.dateOfBirth);
@@ -29,11 +36,21 @@ class Employee {
   qualificationFor(roleId) {
     return this.qualifications.find((q) => q.roleId === roleId) || null;
   }
-  isQualifiedOn(roleId, date) {
-    const q = this.qualificationFor(roleId);
-    if (!q) return false;
-    if (!q.certExpiresOn) return true;
-    return q.certExpiresOn >= date;
+  // where this person stands on one cert as of a date.
+  // new hires get the grace window, renewals don't
+  certStatus(type, date) {
+    const held = this.certs.filter((c) => c.certTypeId === type.id && c.issuedOn <= date);
+    const current = held.find((c) => c.expiresOn >= date);
+    if (current) return { ok: true, expiresOn: current.expiresOn };
+    if (held.length) {
+      const expiredOn = held.map((c) => c.expiresOn).sort().pop();
+      return { ok: false, expiredOn };
+    }
+    if (type.graceDays) {
+      const graceEnds = addDays(this.hireDate, type.graceDays);
+      return { ok: date <= graceEnds, missing: true, graceEnds };
+    }
+    return { ok: false, missing: true };
   }
   rateFor(roleId) {
     const q = this.qualificationFor(roleId);
@@ -42,12 +59,31 @@ class Employee {
 }
 
 class Role {
-  constructor({ id, name, requiresCert = false }) { Object.assign(this, { id, name, requiresCert }); }
+  constructor({ id, name, certs = [] }) {
+    Object.assign(this, { id, name });
+    // "alcohol" or { certTypeId: "alcohol", onlyIf: "carriesDrinks" }
+    this.certs = certs.map((c) => (typeof c === "string" ? { certTypeId: c, onlyIf: null } : c));
+  }
+  // some certs only count if the shift has that duty
+  certsFor(shift) {
+    return this.certs.filter((c) => !c.onlyIf || shift.duties.includes(c.onlyIf));
+  }
 }
 
 class Qualification {
-  constructor({ roleId, hourlyRate, certExpiresOn = null }) {
-    Object.assign(this, { roleId, hourlyRate, certExpiresOn });
+  constructor({ roleId, hourlyRate }) { Object.assign(this, { roleId, hourlyRate }); }
+}
+
+// graceDays = how long a new hire has to get it. 0 means before their first shift
+class CertType {
+  constructor({ id, name, graceDays = 0, renewYears }) {
+    Object.assign(this, { id, name, graceDays, renewYears });
+  }
+}
+
+class Certificate {
+  constructor({ certTypeId, issuedOn, expiresOn }) {
+    Object.assign(this, { certTypeId, issuedOn, expiresOn });
   }
 }
 
@@ -65,9 +101,9 @@ class TimeOffRequest {
 
 class Shift {
   constructor({ id, periodId, roleId, date, startTime, endTime, required = 1,
-                employeeId = null, status = "draft", overrideReason = null }) {
+                employeeId = null, status = "draft", overrideReason = null, duties = [] }) {
     Object.assign(this, { id, periodId, roleId, date, startTime, endTime, required,
-                          employeeId, status, overrideReason });
+                          employeeId, status, overrideReason, duties });
   }
   get hours() {
     const [sh, sm] = this.startTime.split(":").map(Number);
@@ -113,5 +149,5 @@ class Violation {
   get blocks() { return this.severity === "blocking"; }
 }
 
-module.exports = { Employee, Role, Qualification, Availability, TimeOffRequest,
-                   Shift, SchedulePeriod, SwapRequest, Violation };
+module.exports = { Employee, Role, Qualification, CertType, Certificate, Availability,
+                   TimeOffRequest, Shift, SchedulePeriod, SwapRequest, Violation };

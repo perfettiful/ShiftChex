@@ -57,6 +57,8 @@ td.cell{padding:6px}
 .slot.bad select{border-color:var(--red);background:var(--redbg)}
 .slot.warn select{border-color:var(--amber);background:var(--amberbg)}
 .slot.empty select{border-style:dashed;border-color:var(--amber);color:var(--amber)}
+td.cell.off{background:#f4f6f9}
+.duty{display:block;font-size:11px;color:var(--mut);margin-top:3px}
 
 .panel{background:#fff;border:1px solid var(--line);border-radius:6px;position:sticky;top:14px}
 .panel h2{margin:0;padding:13px 16px;font-size:16px;border-bottom:1px solid var(--line);
@@ -83,6 +85,13 @@ td.cell{padding:6px}
 .pill.fail{background:var(--redbg);color:var(--red)}
 .pill.warn{background:var(--amberbg);color:var(--amber)}
 .blocked{background:var(--redbg);border-color:#eac5c0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;padding:4px 9px;border-radius:5px;border:1px solid var(--line);background:#fff}
+.chip b{display:block;font-size:11px;font-weight:700}
+.chip.pass{background:var(--greenbg);border-color:#c5e3cf;color:var(--green)}
+.chip.warn{background:var(--amberbg);border-color:#efdcae;color:var(--amber)}
+.chip.fail{background:var(--redbg);border-color:#eac5c0;color:var(--red)}
+.chip.none{color:var(--mut)}
 .note{color:var(--red);font-weight:600;margin:6px 0 0}
 .section-title{padding:20px 20px 0;font-size:13px;font-weight:700;letter-spacing:.5px;
   text-transform:uppercase;color:var(--mut)}

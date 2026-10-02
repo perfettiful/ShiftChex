@@ -34,6 +34,7 @@ class RuleEngine {
     return {
       employeeById: repo.employeesById(),
       roleById: repo.rolesById(),
+      certTypeById: repo.certTypesById(),
       settings: this.settings,
       today: repo.today(),
     };

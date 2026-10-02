@@ -14,6 +14,19 @@ const serialiseResult = (r) => r && ({
   ok: r.blocking.length === 0,
 });
 
+// every cert a person needs for any role they're trained in, plus any extra they hold
+function certChecklist(e, date) {
+  const rolesById = repo.rolesById();
+  const needed = new Map();
+  e.qualifications.forEach((q) => (rolesById.get(q.roleId)?.certs || []).forEach((c) => {
+    if (!needed.has(c.certTypeId) || !c.onlyIf) needed.set(c.certTypeId, c.onlyIf);
+  }));
+  return repo.certTypes()
+    .filter((t) => needed.has(t.id) || e.certs.some((c) => c.certTypeId === t.id))
+    .map((t) => ({ certTypeId: t.id, name: t.name, onlyIf: needed.get(t.id) || null,
+                   ...e.certStatus(t, date) }));
+}
+
 function buildState(role, employeeId) {
   const period = repo.currentPeriod();
   const result = schedule.validate();
@@ -26,7 +39,8 @@ function buildState(role, employeeId) {
     roles: repo.roles(),
     employees: repo.employees().map((e) => ({
       id: e.id, name: e.name, isMinor: e.isMinorOn(period.startDate),
-      qualifications: e.qualifications,
+      hireDate: e.hireDate, qualifications: e.qualifications,
+      certs: certChecklist(e, period.startDate),
     })),
     period: {
       id: period.id, startDate: period.startDate, endDate: period.endDate,
@@ -35,7 +49,7 @@ function buildState(role, employeeId) {
     shifts: period.shifts.map((s) => ({
       id: s.id, roleId: s.roleId, date: s.date, startTime: s.startTime,
       endTime: s.endTime, employeeId: s.employeeId, status: s.status,
-      hours: s.hours, overrideReason: s.overrideReason,
+      hours: s.hours, overrideReason: s.overrideReason, duties: s.duties,
     })),
     result: serialiseResult(result),
     projectedCost: Math.round(schedule.projectedCost()),

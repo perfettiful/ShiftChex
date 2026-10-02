@@ -16,12 +16,28 @@ right updates whenever you change an assignment.
 
 1. Put Riya Iyer on a Server 11am shift. She only works evenings so R1 blocks it
    and shows her hours.
-2. Put Marcus Okoye on a Bartender shift. His cert expired Sept 30 so R5 blocks
-   it (it checks the shift date, not today's date).
-3. Put Kai Obi on a Server 5pm-11pm shift. He's 17 so R4 blocks it because of
-   curfew.
-4. Try publishing. It won't let you while there are blocking violations.
-5. Fill in the 3 empty cells and publish. Everyone on the schedule gets a notice.
+2. Put Marcus Okoye on Thursday's Bartender shift. His alcohol cert expired
+   9/30 and renewals don't get a grace period, so R10 blocks it.
+3. Put Lena Haas on Thursday's Bartender shift, which works. Then try her on
+   Friday. Her alcohol cert runs out 10/15, and R10 checks the shift date, not
+   today's date.
+4. Put Kai Obi on Friday's Server 5pm-11pm shift. He's 17 so R4 blocks it for
+   curfew, and R10 flags that servers need an alcohol cert. Kai on Friday's Host
+   shift gets blocked too, since that one checks IDs.
+5. Put Priya Shah on any Dishwasher shift. She was hired 8/20 and never got her
+   Food Handler Card, so the 30 day window is closed.
+6. Jordan Lee is already scheduled as a new hire who's still inside the grace
+   windows, so R10 only warns.
+7. Swap Dana off Tuesday lunch for Jordan. Mia is leading that night and has no
+   First Aid, so from 4pm to 5pm nobody on site does and R11 blocks it.
+8. Try publishing. It won't let you while there are blocking violations.
+9. Fill in the 4 empty cells (Sam on Tuesday lunch, Lena on Thursday bar, Ana
+   on Sunday cook, Mia on Sunday PM lead) and publish. Everyone on the schedule
+   gets a notice.
+
+The People tab shows everyone's cert checklist: green is good, amber is a new
+hire inside the window or a cert running out this week, red is expired or
+missing.
 
 **Swaps.** Sign in as an employee and post one of your shifts, then sign in as
 someone else and open the swap board. Shifts you can't take still show up with
@@ -41,7 +57,7 @@ public/            browser client (UI only)
 src/
   application/     controllers, rule engine, factory, event bus
   domain/          domain model classes
-  domain/rules/    Rule interface, CompositeRule, the 9 rules
+  domain/rules/    Rule interface, CompositeRule, the 11 rules
   persistence/     repository + demo data
 ```
 
@@ -56,7 +72,7 @@ src/
 | Adapter | `persistence/repository.js` |
 | Pure Fabrication | `application/RuleEngine.js` |
 | Controller | `application/ScheduleController.js`, `SwapController.js` |
-| Information Expert | `Employee.isAvailableOn`, `Shift.isCovered` in `domain/index.js` |
+| Information Expert | `Employee.isAvailableOn`, `Employee.certStatus` in `domain/index.js` |
 
 ### Rules
 
@@ -69,10 +85,20 @@ src/
 - R7 overtime
 - R8 labour budget
 - R9 advance notice
+- R10 required certifications
+- R11 on-site certifications
 
-R1-R6 block publishing, R7-R9 are just warnings. The thresholds are in
+R1-R6, R10 and R11 block publishing, R7-R9 are just warnings (R10 also warns
+about new hires still in their grace window). The thresholds are in
 `persistence/seed.js` under `settings` instead of hardcoded in the rules, so
 one business could use 10 hours of rest and another could use 12.
+
+### Certifications
+
+The full list of which certs each role needs, the new hire windows and the
+renewal periods is in [docs/certifications.md](docs/certifications.md). R10
+checks each person against it and R11 checks the whole restaurant (First Aid
+and Food Manager on site the whole time, set by `siteCerts` in `settings`).
 
 ## Notes
 

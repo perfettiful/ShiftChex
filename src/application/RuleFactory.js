@@ -9,7 +9,9 @@ class RuleFactory {
       new R.RestRule(),
       new R.MinorHoursRule(),
       new R.QualificationRule(),
+      new R.CertificationRule(),
       new R.CoverageRule(),
+      new R.OnSiteCertRule(),
     ]);
     const warnings = new R.CompositeRule("warnings", "Rules that only warn", [
       new R.OvertimeRule(),

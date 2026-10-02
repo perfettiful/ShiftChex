@@ -9,6 +9,7 @@ class InMemoryRepository {
     const data = seed();
     this._employees = data.employees;
     this._roles = data.roles;
+    this._certTypes = data.certTypes;
     this._period = data.period;
     this._timeOff = data.timeOff;
     this._swaps = [];
@@ -23,6 +24,7 @@ class InMemoryRepository {
   today() { return this._today; }
   employees() { return this._employees; }
   roles() { return this._roles; }
+  certTypes() { return this._certTypes; }
   currentPeriod() { return this._period; }
   timeOff() { return this._timeOff; }
   swaps() { return this._swaps; }
@@ -31,6 +33,7 @@ class InMemoryRepository {
 
   employeesById() { return new Map(this._employees.map((e) => [e.id, e])); }
   rolesById() { return new Map(this._roles.map((r) => [r.id, r])); }
+  certTypesById() { return new Map(this._certTypes.map((c) => [c.id, c])); }
 
   nextId(kind) { return `${kind}-${this._counters[kind]++}`; }
 }

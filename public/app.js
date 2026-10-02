@@ -26,6 +26,7 @@ const time = (t) => {
 };
 const roleName = (id) => (S.roles.find((r) => r.id === id) || {}).name || id;
 const empName = (id) => (S.employees.find((e) => e.id === id) || {}).name || "";
+const DUTIES = { carriesDrinks: "carries drinks", checksIds: "checks IDs" };
 
 function toast(msg, bad) {
   const t = $("#toast");
@@ -136,9 +137,10 @@ function scheduleView() {
       el("td", { class: "block" },
         el("b", {}, roleName(b.roleId)),
         el("small", {}, `${time(b.startTime)} - ${time(b.endTime)}`),
-        el("small", { class: "muted" }, `needs ${(b.byDate.get(days[0]) || []).length}`)),
-      days.map((d) => el("td", { class: "cell" },
-        (b.byDate.get(d) || []).map((s) => slotSelect(s, bad.get(s.id)))))))));
+        el("small", { class: "muted" }, `needs ${Math.max(...[...b.byDate.values()].map((l) => l.length))}`)),
+      days.map((d) => el("td", { class: "cell" + (b.byDate.has(d) ? "" : " off") },
+        (b.byDate.get(d) || []).map((s) => slotSelect(s, bad.get(s.id))),
+        (b.byDate.get(d) || [])[0]?.duties.map((x) => el("small", { class: "duty" }, DUTIES[x]))))))));
 
   const panel = el("aside", { class: "panel" },
     el("h2", {}, "Rule check",
@@ -227,14 +229,27 @@ async function decideTimeOff(requestId, decision) {
 }
 
 // manager: people
+function certChips(e) {
+  return el("div", { class: "chips" }, e.certs.map((c) => {
+    const extra = c.onlyIf ? ` (if ${DUTIES[c.onlyIf]})` : "";
+    let cls, text;
+    if (c.expiredOn) { cls = "fail"; text = `expired ${c.expiredOn}`; }
+    else if (c.missing && c.ok) { cls = "warn"; text = `new hire, due ${c.graceEnds}`; }
+    else if (c.missing) { cls = c.onlyIf ? "none" : "fail"; text = "missing"; }
+    else if (c.expiresOn <= S.period.endDate) { cls = "warn"; text = `expires ${c.expiresOn}`; }
+    else { cls = "pass"; text = `good to ${c.expiresOn}`; }
+    return el("span", { class: "chip " + cls }, el("b", {}, c.name + extra), text);
+  }));
+}
+
 function peopleView() {
   return [el("div", { class: "section-title" }, "People"),
     el("div", { class: "cards" }, S.employees.map((e) =>
       el("div", { class: "card" },
         el("h3", {}, e.name + (e.isMinor ? "  ·  under 18" : "")),
-        el("div", { class: "muted" }, e.qualifications.map((q) =>
-          `${roleName(q.roleId)} at $${q.hourlyRate}` +
-          (q.certExpiresOn ? ` (certification expires ${q.certExpiresOn})` : "")).join("  ·  ")))))];
+        el("div", { class: "muted" }, `Hired ${e.hireDate}  ·  ` + e.qualifications.map((q) =>
+          `${roleName(q.roleId)} at $${q.hourlyRate}`).join("  ·  ")),
+        certChips(e))))];
 }
 
 // employee views
@@ -263,6 +278,9 @@ function myScheduleView() {
               onclick: () => postSwap(s.id) },
               published ? "Post for swap" : "Not published yet")));
     }) : el("p", { class: "muted" }, "No shifts this week.")),
+    el("div", { class: "section-title" }, "My certifications"),
+    el("div", { class: "cards" }, el("div", { class: "card" },
+      certChips(S.employees.find((e) => e.id === S.employeeId)))),
   ];
 }
 

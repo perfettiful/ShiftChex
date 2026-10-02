@@ -13,6 +13,10 @@ const hhmm = (t) => {
 };
 const dayName = (d) => new Date(d + "T12:00:00")
   .toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+const fullDate = (d) => new Date(d + "T12:00:00")
+  .toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
+const certName = (ctx, id) => ctx.certTypeById.get(id).name;
+const DUTIES = { carriesDrinks: "carries drinks", checksIds: "checks IDs" };
 
 // R1
 class AvailabilityRule extends Rule {
@@ -106,15 +110,9 @@ class QualificationRule extends Rule {
     for (const s of assignedShifts(ctx)) {
       const e = emp(ctx, s.employeeId);
       if (!e) continue;
-      const q = e.qualificationFor(s.roleId);
-      if (!q) {
+      if (!e.qualificationFor(s.roleId)) {
         out.push(Violation.blocking(this.id,
           `${e.name} is not trained for ${roleName(ctx, s.roleId)}.`, s.id));
-      } else if (q.certExpiresOn && q.certExpiresOn < s.date) {
-        // use the shift date, not today
-        out.push(Violation.blocking(this.id,
-          `${e.name}'s ${roleName(ctx, s.roleId)} certification expires ${q.certExpiresOn}, ` +
-          `which is before this shift on ${dayName(s.date)}.`, s.id));
       }
     }
     return out;
@@ -177,6 +175,84 @@ class NoticeRule extends Rule {
   }
 }
 
+// R10
+// checked against the shift date, not today
+class CertificationRule extends Rule {
+  constructor() { super("R10", "Required certifications"); }
+  check(ctx) {
+    const out = [], grace = new Map();
+    for (const s of assignedShifts(ctx)) {
+      const e = emp(ctx, s.employeeId);
+      const role = ctx.roleById.get(s.roleId);
+      if (!e || !role) continue;
+      const problems = [];
+      for (const need of role.certsFor(s)) {
+        const type = ctx.certTypeById.get(need.certTypeId);
+        const st = e.certStatus(type, s.date);
+        const why = need.onlyIf ? ` (this shift ${DUTIES[need.onlyIf]})` : "";
+        if (st.ok && st.missing) {
+          // new hire still inside the window, just a heads up
+          if (!grace.has(e.id)) grace.set(e.id, new Map());
+          grace.get(e.id).set(type.id, st.graceEnds);
+        } else if (st.expiredOn) {
+          problems.push(`${type.name} expired ${fullDate(st.expiredOn)}${why}, renewals don't get a grace period`);
+        } else if (st.graceEnds) {
+          problems.push(`no ${type.name}${why}, the ${type.graceDays} day new hire window closed ${fullDate(st.graceEnds)}`);
+        } else if (!st.ok) {
+          problems.push(`no ${type.name}${why}, needed before working`);
+        }
+      }
+      if (problems.length) {
+        out.push(Violation.blocking(this.id,
+          `${e.name} can't work ${roleName(ctx, s.roleId)} on ${dayName(s.date)}: ${problems.join("; ")}.`, s.id));
+      }
+    }
+    for (const [employeeId, certs] of grace) {
+      const list = [...certs].map(([id, due]) => `${certName(ctx, id)} by ${fullDate(due)}`);
+      out.push(Violation.warning(this.id,
+        `${emp(ctx, employeeId).name} is a new hire and still needs ${list.join(", ")}.`));
+    }
+    return out;
+  }
+}
+
+// R11
+// every minute the place is open needs someone with each site cert on the floor
+class OnSiteCertRule extends Rule {
+  constructor() { super("R11", "On-site certifications"); }
+  appliesTo(scope) { return scope === "period"; }
+  check(ctx) {
+    const out = [];
+    const byDate = new Map();
+    for (const s of assignedShifts(ctx)) {
+      if (!byDate.has(s.date)) byDate.set(s.date, []);
+      byDate.get(s.date).push(s);
+    }
+    for (const [date, shifts] of [...byDate].sort()) {
+      const times = [...new Set(shifts.flatMap((s) => [s.startTime, s.endTime]))].sort();
+      for (const certTypeId of ctx.settings.siteCerts) {
+        const type = ctx.certTypeById.get(certTypeId);
+        let gapStart = null;
+        for (let i = 0; i < times.length; i++) {
+          const from = times[i], to = times[i + 1];
+          const here = to ? shifts.filter((s) => s.startTime <= from && s.endTime >= to) : [];
+          const covered = !here.length || here.some((s) => {
+            const e = emp(ctx, s.employeeId);
+            return e && e.certStatus(type, date).ok;
+          });
+          if (!covered && gapStart === null) gapStart = from;
+          if (covered && gapStart !== null) {
+            out.push(Violation.blocking(this.id,
+              `${dayName(date)} ${hhmm(gapStart)} to ${hhmm(from)}: nobody on site has a ${type.name}.`));
+            gapStart = null;
+          }
+        }
+      }
+    }
+    return out;
+  }
+}
+
 module.exports = { Rule, CompositeRule, AvailabilityRule, TimeOffRule, RestRule,
                    MinorHoursRule, QualificationRule, CoverageRule, OvertimeRule,
-                   BudgetRule, NoticeRule };
+                   BudgetRule, NoticeRule, CertificationRule, OnSiteCertRule };
