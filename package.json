@@ -4,7 +4,8 @@
   "description": "ShiftChex prototype. ICS 370 Group 3.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "license": "MIT"
 }

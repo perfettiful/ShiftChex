@@ -9,6 +9,14 @@ node server.js
 Then go to http://localhost:3000. You just need Node 18+, nothing to install
 (no npm install, no database). Works on Windows and Mac.
 
+## Tests
+
+```
+npm test
+```
+
+61 tests in `tests/`, using Node's built-in test runner. No packages.
+
 ## Demo steps
 
 **Schedule builder.** Sign in as R. Chen (Manager). The rule check panel on the

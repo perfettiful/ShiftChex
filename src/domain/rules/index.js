@@ -66,14 +66,23 @@ class RestRule extends Rule {
     const minRest = ctx.settings.minRestHours;
     for (const [employeeId, list] of byEmployee) {
       list.sort((a, b) => a.startsAt - b.startsAt);
-      for (let i = 1; i < list.length; i++) {
-        const gap = (list[i].startsAt - list[i - 1].endsAt) / 3600000;
-        if (gap >= minRest) continue;
-        const e = emp(ctx, employeeId);
-        out.push(Violation.blocking(this.id,
-          `${e.name} finishes at ${hhmm(list[i - 1].endTime)} on ${dayName(list[i - 1].date)} and starts at ` +
-          `${hhmm(list[i].startTime)} on ${dayName(list[i].date)}. That is ${gap.toFixed(1)} hours rest, ` +
-          `and this business requires ${minRest}.`, list[i].id));
+      const e = emp(ctx, employeeId);
+      // compare to whatever ends latest, so a shift inside a long one still gets caught
+      let prev = list[0];
+      for (const s of list.slice(1)) {
+        const gap = (s.startsAt - prev.endsAt) / 3600000;
+        if (gap < 0) {
+          // overlap means double booked, not short on rest
+          out.push(Violation.blocking(this.id,
+            `${e.name} is double booked on ${dayName(s.date)}: ${hhmm(prev.startTime)} to ${hhmm(prev.endTime)} ` +
+            `and ${hhmm(s.startTime)} to ${hhmm(s.endTime)}.`, s.id));
+        } else if (gap < minRest) {
+          out.push(Violation.blocking(this.id,
+            `${e.name} finishes at ${hhmm(prev.endTime)} on ${dayName(prev.date)} and starts at ` +
+            `${hhmm(s.startTime)} on ${dayName(s.date)}. That is ${gap.toFixed(1)} hours rest, ` +
+            `and this business requires ${minRest}.`, s.id));
+        }
+        if (s.endsAt > prev.endsAt) prev = s;
       }
     }
     return out;
