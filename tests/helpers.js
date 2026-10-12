@@ -1,6 +1,9 @@
 const { Employee, Role, Qualification, CertType, Certificate, Availability,
         Shift, SchedulePeriod } = require("../src/domain");
-const { buildApp } = require("../src/application/wiring");
+const wiring = require("../src/application/wiring");
+
+// fresh in-memory db each time, so tests never touch data/shiftchex.db
+const buildApp = () => wiring.buildApp({ db: ":memory:" });
 
 const SETTINGS = {
   minRestHours: 10, overtimeThreshold: 40, minorMaxDailyHours: 8,

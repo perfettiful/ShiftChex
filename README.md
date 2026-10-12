@@ -3,11 +3,30 @@
 ## Running it
 
 ```
-node server.js
+npm start
 ```
 
-Then go to http://localhost:3000. You just need Node 18+, nothing to install
-(no npm install, no database). Works on Windows and Mac.
+Then go to http://localhost:3000. You need Node 22.13 or newer and nothing else
+(no npm install). Works on Windows and Mac.
+
+## Database
+
+Data is stored in SQLite using Node's built-in `node:sqlite`, so there's no
+database server to install. The file is `data/shiftchex.db` and it's tracked in
+the repo. On startup the server runs any new migrations, and if the database
+is empty it loads the demo week from `seed.js`.
+
+```
+npm run db:migrate   # apply any migrations that haven't run yet
+npm run db:seed      # put the demo week back, keeps the schema
+npm run db:reset     # delete the file and rebuild it from the migrations
+npm run db:status    # which migrations ran and row counts
+```
+
+Migrations are numbered `.sql` files in `src/persistence/migrations/`. Each one
+runs once, inside a transaction, and gets recorded in `schema_migrations`. To
+change the schema, add the next file (`003_something.sql`), don't edit one that
+already ran. Set `SHIFTCHEX_DB` to use a different file.
 
 ## Tests
 
@@ -15,7 +34,8 @@ Then go to http://localhost:3000. You just need Node 18+, nothing to install
 npm test
 ```
 
-61 tests in `tests/`, using Node's built-in test runner. No packages.
+61 tests in `tests/`, using Node's built-in test runner. No packages. Each test
+gets its own in-memory database, so running them never touches `data/shiftchex.db`.
 
 ## Demo steps
 
@@ -53,7 +73,7 @@ the reason. Claim one you can take, then switch to the manager and go to
 Approvals. The rule check result is already there, and if it failed the approve
 button is disabled.
 
-`Reset demo` resets all the data.
+`Reset demo` puts the demo week back in the database (same as `npm run db:seed`).
 
 ## Code layout
 
@@ -66,7 +86,9 @@ src/
   application/     controllers, rule engine, factory, event bus
   domain/          domain model classes
   domain/rules/    Rule interface, CompositeRule, the 11 rules
-  persistence/     repository + demo data
+  persistence/     sqlite repository, migrations, demo data
+scripts/db.js      db:migrate / db:seed / db:reset / db:status
+data/              shiftchex.db
 ```
 
 ### Patterns
@@ -77,7 +99,7 @@ src/
 | Composite | `domain/rules/CompositeRule.js` |
 | Factory | `application/RuleFactory.js` |
 | Observer | `application/events.js`, hooked up in `application/wiring.js` |
-| Adapter | `persistence/repository.js` |
+| Adapter | `persistence/repository.js` (sqlite rows to domain objects and back) |
 | Pure Fabrication | `application/RuleEngine.js` |
 | Controller | `application/ScheduleController.js`, `SwapController.js` |
 | Information Expert | `Employee.isAvailableOn`, `Employee.certStatus` in `domain/index.js` |
@@ -123,4 +145,3 @@ and Food Manager on site the whole time, set by `siteCerts` in `settings`).
   scope)
 - No auto-generating schedules
 - No payroll, time clock, or text/email notifications
-- Data is in memory only and resets when the server restarts

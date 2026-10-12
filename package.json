@@ -3,9 +3,16 @@
   "version": "1.0.0",
   "description": "ShiftChex prototype. ICS 370 Group 3.",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:migrate": "node scripts/db.js migrate",
+    "db:seed": "node scripts/db.js seed",
+    "db:reset": "node scripts/db.js reset",
+    "db:status": "node scripts/db.js status"
   },
   "license": "MIT"
 }

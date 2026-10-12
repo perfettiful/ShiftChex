@@ -7,6 +7,7 @@ const path = require("path");
 const { buildApp } = require("./src/application/wiring");
 
 const { repo, engine, schedule, swaps } = buildApp();
+const { DEFAULT_FILE } = require("./src/persistence/db");
 
 // view
 const serialiseResult = (r) => r && ({
@@ -132,4 +133,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`ShiftChex running at http://localhost:${PORT}`);
   console.log(`${repo.organization.name}, week of ${repo.currentPeriod().startDate}`);
+  const rel = path.relative(process.cwd(), DEFAULT_FILE);
+  console.log(`Database: ${rel.startsWith("..") ? DEFAULT_FILE : rel}`);
 });

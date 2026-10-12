@@ -17,6 +17,7 @@ class ScheduleController {
     if (!shift) return { error: "No such shift." };
     if (employeeId === null) shift.unassign();
     else { shift.assign(employeeId); shift.overrideReason = overrideReason; }
+    this.repo.saveShift(shift);
     return { ok: true, result: this.validate() };
   }
 
@@ -39,6 +40,7 @@ class ScheduleController {
     period.status = "published";
     period.publishedOn = this.repo.today();
     period.shifts.forEach((s) => { if (s.status === "draft") s.status = "published"; });
+    this.repo.savePeriod(period);
     // Observer: fire event, subscribers handle the rest
     this.events.emit("schedule.published", { period });
     return { ok: true, result };
@@ -49,6 +51,7 @@ class ScheduleController {
     period.status = "draft";
     period.publishedOn = null;
     period.shifts.forEach((s) => { if (s.status === "published") s.status = "draft"; });
+    this.repo.savePeriod(period);
     return { ok: true };
   }
 
@@ -56,6 +59,7 @@ class ScheduleController {
     const r = this.repo.timeOff().find((t) => t.id === requestId);
     if (!r) return { error: "No such request." };
     r.status = decision === "approve" ? "approved" : "denied";
+    this.repo.saveTimeOff(r);
     return { ok: true, result: this.validate() };
   }
 }
