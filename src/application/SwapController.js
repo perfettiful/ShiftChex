@@ -35,8 +35,8 @@ class SwapController {
       id: this.repo.nextId("swap"), shiftId, postedBy: employeeId,
       status: "posted", postedOn: this.repo.today(),
     });
-    this.repo.swaps().push(swap);
     shift.status = "openForSwap";
+    this.repo.transaction(() => { this.repo.addSwap(swap); this.repo.saveShift(shift); });
     return { ok: true, swap };
   }
 
@@ -57,6 +57,7 @@ class SwapController {
     swap.status = "claimed";
     swap.note = result.warnings.length ? result.warnings[0].message : null;
     shift.status = "claimed";
+    this.repo.transaction(() => { this.repo.saveSwap(swap); this.repo.saveShift(shift); });
     return { ok: true, result };
   }
 
@@ -94,6 +95,7 @@ class SwapController {
       swap.status = "denied";
     }
     swap.decidedOn = this.repo.today();
+    this.repo.transaction(() => { this.repo.saveShift(shift); this.repo.saveSwap(swap); });
     this.events.emit("swap.decided", { swap });
     return { ok: true };
   }

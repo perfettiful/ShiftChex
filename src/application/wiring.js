@@ -6,8 +6,9 @@ const SwapController = require("./SwapController");
 const EventBus = require("./events");
 
 // wires everything together
-function buildApp() {
-  const repo = new Repository();
+// db: sqlite file path, or ":memory:" for tests. defaults to data/shiftchex.db
+function buildApp({ db } = {}) {
+  const repo = new Repository(db);
   const events = new EventBus();
   const engine = new RuleEngine(RuleFactory.rulesFor(repo.organization), repo.settings);
   const schedule = new ScheduleController(repo, engine, events);
@@ -16,16 +17,16 @@ function buildApp() {
   // observers
   events.on("schedule.published", ({ period }) => {
     const affected = new Set(period.shifts.filter((s) => s.isAssigned()).map((s) => s.employeeId));
-    affected.forEach((employeeId) => repo.notices().push({
+    affected.forEach((employeeId) => repo.addNotice({
       id: repo.nextId("notice"), employeeId,
       text: `The schedule for the week of ${period.startDate} has been published.`,
     }));
   });
   events.on("schedule.published", ({ period }) => {
-    repo.audit().push({ at: repo.today(), what: `Published period ${period.id}` });
+    repo.addAudit({ at: repo.today(), what: `Published period ${period.id}` });
   });
   events.on("swap.decided", ({ swap }) => {
-    repo.audit().push({ at: repo.today(), what: `Swap ${swap.id} ${swap.status}` });
+    repo.addAudit({ at: repo.today(), what: `Swap ${swap.id} ${swap.status}` });
   });
 
   return { repo, events, engine, schedule, swaps };
