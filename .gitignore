@@ -1,5 +1,5 @@
-# local sqlite data. data/shiftchex.db is committed as the demo snapshot,
-# run `git update-index --skip-worktree data/shiftchex.db` so your local changes stay out of commits
+# sqlite files. data/shiftchex.db is already committed with the demo data,
+# run `git update-index --skip-worktree data/shiftchex.db` once so your local changes don't get committed
 data/*.db
 data/*.db-journal
 data/*.db-wal

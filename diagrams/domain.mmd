@@ -1,8 +1,8 @@
 ---
 title: Domain Model - ShiftChex
 ---
-%% Conceptual classes only. No methods and no arrowheads, because a domain
-%% model describes the real world, not software objects.
+%% conceptual classes only. no methods or arrowheads since the domain model
+%% is about the restaurant, not our code
 classDiagram
     direction LR
     class Employee {
@@ -49,8 +49,8 @@ classDiagram
         decidedOn
     }
 
-    %% Relationship order steers Mermaid's layout. In this order no line
-    %% passes behind a class box.
+    %% the order of these lines changes the layout. in this order none of
+    %% the lines go behind a box
     Employee "1" -- "*" Availability : declares
     Employee "1" -- "*" TimeOffRequest : submits
     Employee "1" -- "1..*" Qualification : holds

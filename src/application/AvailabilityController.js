@@ -3,12 +3,11 @@ const { TimeOffRequest } = require("../domain");
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-// UC-01 and UC-02: what an employee tells us about when they can work.
-// both feed the rules, R1 reads availability and R2 reads approved time off
+// UC-01 and UC-02, the employee side. R1 checks availability, R2 checks approved time off
 class AvailabilityController {
   constructor(repo) { this.repo = repo; }
 
-  // UC-01. one window per weekday, a day that's left out means not available
+  // UC-01. one time window per day, a day that's left out means they can't work it
   declare(employeeId, { effectiveFrom, slots } = {}) {
     if (!this.repo.employeesById().has(employeeId)) return { error: "No such employee." };
     if (!DATE.test(effectiveFrom || "")) return { error: "Pick the date this starts from." };

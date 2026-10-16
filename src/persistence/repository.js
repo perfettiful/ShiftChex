@@ -17,8 +17,8 @@ const groupBy = (rows, key) => rows.reduce((m, r) => {
 // sqlite won't take undefined
 const v = (x) => (x === undefined ? null : x);
 
-// Adapter: turns sqlite rows into domain objects and back. nothing is kept
-// between calls, every read is a query, so what you see is what's in the file
+// Adapter: turns sqlite rows into domain objects and back.
+// nothing is cached, every read is a new query
 class SqliteRepository {
   constructor(file = DEFAULT_FILE) {
     this.file = file;
@@ -40,7 +40,7 @@ class SqliteRepository {
 
   organization() { return { ...this.#get("SELECT id, name FROM organization") }; }
 
-  // rule thresholds. "today" is kept with them but handed out on its own
+  // rule thresholds. today is in the same table but has its own method
   settings() {
     const { today: _today, ...rules } = this.#settings();
     return rules;
@@ -142,8 +142,8 @@ class SqliteRepository {
     });
   }
 
-  // UC-01. a new declaration replaces anything that starts on or after its date,
-  // older ones stay so earlier dates are still checked against what was true then
+  // UC-01. replaces anything starting on or after this date. older rows stay
+  // so earlier dates still get checked against what was true back then
   saveAvailability(employeeId, effectiveFrom, slots) {
     this.transaction(() => {
       this.#run("DELETE FROM availability WHERE employee_id = ? AND effective_from >= ?", employeeId, effectiveFrom);
@@ -199,7 +199,7 @@ class SqliteRepository {
 
   close() { this.db.close(); }
 
-  // prepared once per connection, the queries above run on every request
+  // reuse prepared statements since these queries run on every request
   #stmt(sql) {
     if (!this.statements.has(sql)) this.statements.set(sql, this.db.prepare(sql));
     return this.statements.get(sql);

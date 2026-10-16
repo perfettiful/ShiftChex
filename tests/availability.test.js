@@ -2,7 +2,7 @@ const { describe, test } = require("node:test");
 const assert = require("node:assert/strict");
 const { buildApp, find } = require("./helpers");
 
-// UC-01 and UC-02 go through the controller and get read back from the database
+// UC-01 and UC-02. goes through the controller, then reads it back from the db
 
 const EVENINGS = [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, startTime: "16:00", endTime: "23:59" }));
 const blockedFor = (app, ruleId, name) => {

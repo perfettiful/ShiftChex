@@ -1,9 +1,9 @@
 ---
 title: Proposed Architecture - ShiftChex
 ---
-%% Not UML. A layered block diagram, drawn as a flowchart.
-%% Arrows join individual boxes, not the layers themselves. Linking a whole
-%% subgraph makes Mermaid stack its contents in one column.
+%% not UML, just our layers drawn as a flowchart.
+%% arrows go box to box instead of layer to layer because linking a whole
+%% subgraph makes mermaid stack everything in one column
 flowchart TB
     subgraph client["Client Tier"]
         C1["Manager Workstation<br/>Desktop browser, schedule builder"]
@@ -38,7 +38,7 @@ flowchart TB
     end
 
     C2 --> P2 --> A2
-    %% Invisible links keep the four services on one row with the engine below.
+    %% invisible links so the four services stay in one row with the engine under them
     P2 ~~~ A1 & A3 & A4
     A2 ~~~ ENGINE
     ENGINE --> DM --> T2

@@ -8,12 +8,12 @@ const { buildApp } = require("../application/wiring");
 
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript" };
 
-// ui layer. only talks to the controllers, never to the repository
+// ui layer. only calls controllers, never the repository
 function createServer(app = buildApp()) {
   const { schedule, swaps, availability, session } = app;
 
   // [who can call it, handler]. handlers get the body and the signed in user.
-  // employee actions use the signed in employee, never an id from the body
+  // employee actions always use the signed in employee, not an id from the body
   const routes = {
     "GET /api/users":           ["open", () => session.users()],
     "GET /api/state":           ["any", (_b, u) => session.stateFor(u)],
@@ -61,7 +61,8 @@ function createServer(app = buildApp()) {
     const full = path.join(__dirname, "public", path.normalize(file).replace(/^(\.\.[/\\])+/, ""));
     fs.readFile(full, (err, data) => {
       if (err) { res.writeHead(404); return res.end("Not found"); }
-      res.writeHead(200, { "Content-Type": MIME[path.extname(full)] || "text/plain" });
+      // no-cache so a browser never keeps running old js after someone pulls new code
+    res.writeHead(200, { "Content-Type": MIME[path.extname(full)] || "text/plain", "Cache-Control": "no-cache" });
       res.end(data);
     });
   });

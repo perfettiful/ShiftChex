@@ -23,7 +23,7 @@ class Employee {
   }
   isMinorOn(date) { return this.ageOn(date) < 18; }
 
-  // the declaration in force on a date is the newest one that started on or before it (UC-01)
+  // availability for a date = the newest one that started on or before it (UC-01)
   availabilityOn(date) {
     const from = this.availability.map((a) => a.effectiveFrom).filter((f) => f <= date).sort().pop();
     return this.availability.filter((a) => a.effectiveFrom === from);
@@ -154,7 +154,7 @@ class Violation {
   get blocks() { return this.severity === "blocking"; }
 }
 
-// what a shift duty means in words. rules use it in messages and the UI gets it from the API
+// labels for shift duties. used in rule messages and sent to the ui
 const DUTIES = { carriesDrinks: "carries drinks", checksIds: "checks IDs" };
 
 module.exports = { Employee, Role, Qualification, CertType, Certificate, Availability,

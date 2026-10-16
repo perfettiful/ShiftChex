@@ -1,11 +1,11 @@
 const { DUTIES } = require("../domain");
 
-// the manager signs in but isn't on the schedule, so there's no employee row for them.
-// handled here instead of in the database (no logins in the prototype, see README)
+// the manager isn't on the schedule so they don't have an employee row.
+// for the demo we just set them up here instead of adding a users table
 const MANAGER = { id: "manager", name: "R. Chen", role: "manager", employeeId: null };
 
-// who can sign in, what they're allowed to do, and what each of them sees.
-// the UI only ever talks to controllers, so building the screen data lives here too
+// sign in plus the data each screen needs. the ui only talks to
+// controllers, so building that data has to happen here
 class SessionController {
   constructor(repo, schedule, swaps) {
     this.repo = repo; this.schedule = schedule; this.swaps = swaps;
@@ -28,16 +28,26 @@ class SessionController {
     return { user };
   }
 
+  // reset, then read it back from the db to make sure it actually took
   resetDemo() {
     this.repo.reset();
-    return { ok: true };
+    const period = this.repo.currentPeriod();
+    const check = {
+      status: period.status,
+      shifts: period.shifts.length,
+      empty: period.shifts.filter((s) => !s.isAssigned()).length,
+      swaps: this.repo.swaps().length,
+      notices: this.repo.notices().length,
+    };
+    const clean = check.status === "draft" && check.swaps === 0 && check.notices === 0;
+    return clean ? { ok: true, check } : { error: "The reset didn't take. Try npm run db:reset.", check };
   }
 
   about() {
     return { organization: this.repo.organization().name, weekOf: this.repo.currentPeriod().startDate };
   }
 
-  // everything one screen needs, read fresh from the database
+  // everything the screen needs, straight from the db
   stateFor(user) {
     const period = this.repo.currentPeriod();
     const employees = this.repo.employees();
@@ -83,7 +93,7 @@ class SessionController {
     } else {
       const me = byId.get(user.employeeId);
       state.timeOff = me.timeOff.map((t) => ({ ...t }));
-      // the newest declaration, even if it hasn't started yet, so the form shows what they last sent
+      // newest one even if it hasn't started yet, so the form shows what they last saved
       state.myAvailability = declaration(me, "9999-12-31");
       state.notices = this.repo.notices().filter((n) => n.employeeId === user.employeeId);
       state.board = this.swaps.board(user.employeeId).map((b) => ({
@@ -111,7 +121,7 @@ function certChecklist(e, date, rolesById, certTypes) {
                    ...e.certStatus(t, date) }));
 }
 
-// the availability in force on a date, and when it started
+// the availability that applies on a date, and when it started
 function declaration(e, date) {
   const slots = e.availabilityOn(date);
   return {

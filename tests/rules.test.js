@@ -4,7 +4,7 @@ const R = require("../src/domain/rules");
 const { TimeOffRequest, Availability } = require("../src/domain");
 const { ctx, person, shift } = require("./helpers");
 
-// each rule on its own: a pass, a fail, and the edge wherever there's a threshold
+// each rule by itself. one that passes, one that fails, and the edge case if there's a threshold
 
 describe("rule tests", () => {
   describe("R1 availability", () => {

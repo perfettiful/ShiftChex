@@ -54,8 +54,8 @@ classDiagram
     RuleEngine "1" --> "*" Rule : holds
     RuleEngine ..> Violation : creates
 
-    %% Interface realization is a dashed line with a hollow triangle.
-    %% The original PNG draws these solid, which is the notation for inheritance.
+    %% implementing an interface is a dashed line with a hollow triangle.
+    %% the old PNG had these solid, which actually means inheritance
     Rule <|.. AvailabilityRule
     Rule <|.. RestRule
     Rule <|.. QualificationRule

@@ -41,8 +41,17 @@ describe("session tests", () => {
     assert.ok(state.timeOff.every((t) => t.employeeId === "e6"));
   });
 
+  test("reset puts the demo week back and says what's there", () => {
+    const app = publishable();
+    app.schedule.publish();
+    const { ok, check } = app.session.resetDemo();
+    assert.ok(ok);
+    assert.deepEqual(check, { status: "draft", shifts: 79, empty: 4, swaps: 0, notices: 0 });
+    assert.equal(app.repo.currentPeriod().status, "draft");
+  });
+
   test("screens are read from the database, not kept in memory", () => {
-    // write through one connection, read through another, no restart in between
+    // save with one connection and read with another, no restart
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "shiftchex-"));
     const file = path.join(dir, "test.db");
     const a = wiring.buildApp({ db: file });

@@ -2,7 +2,7 @@ const { describe, test } = require("node:test");
 const assert = require("node:assert/strict");
 const { buildApp, publishable } = require("./helpers");
 
-// the postconditions from the operation contracts actually hold
+// checks the postconditions from our operation contracts are actually true
 
 // published week, with dana's monday lunch shift up for grabs
 function posted() {
@@ -14,7 +14,7 @@ function posted() {
   return { app, shiftId: shift.id, swapId: swap.id };
 }
 
-// read back from the database, not the objects the controller was handed
+// read it back from the db instead of checking the objects we passed in
 const saved = (app, shiftId, swapId) => ({
   shift: app.repo.currentPeriod().shifts.find((s) => s.id === shiftId),
   swap: app.repo.swaps().find((s) => s.id === swapId),
