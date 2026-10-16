@@ -1,6 +1,6 @@
 const { Employee, Role, Qualification, CertType, Certificate, Availability,
         TimeOffRequest, Shift, SchedulePeriod, SwapRequest } = require("../domain");
-const { open, migrate } = require("./db");
+const { open, migrate, DEFAULT_FILE } = require("./db");
 const seed = require("./seed");
 
 // child tables first so foreign keys don't complain
@@ -17,14 +17,15 @@ const groupBy = (rows, key) => rows.reduce((m, r) => {
 // sqlite won't take undefined
 const v = (x) => (x === undefined ? null : x);
 
-// Adapter: turns sqlite rows into domain objects and back. everything is
-// loaded once and kept in memory, and every change gets written straight through
+// Adapter: turns sqlite rows into domain objects and back.
+// nothing is cached, every read is a new query
 class SqliteRepository {
-  constructor(file) {
+  constructor(file = DEFAULT_FILE) {
+    this.file = file;
     this.db = open(file);
+    this.statements = new Map();
     migrate(this.db);
-    if (this.db.prepare("SELECT COUNT(*) AS n FROM organization").get().n === 0) this.#seed();
-    this.#load();
+    if (this.#get("SELECT COUNT(*) AS n FROM organization").n === 0) this.#seed();
   }
 
   // wipe the data (not the schema) and put the demo week back
@@ -33,68 +34,150 @@ class SqliteRepository {
       TABLES.forEach((t) => this.db.exec(`DELETE FROM ${t}`));
       this.#seed();
     });
-    this.#load();
   }
 
-  today() { return this._today; }
-  employees() { return this._employees; }
-  roles() { return this._roles; }
-  certTypes() { return this._certTypes; }
-  currentPeriod() { return this._period; }
-  timeOff() { return this._timeOff; }
-  swaps() { return this._swaps; }
-  notices() { return this._notices; }
-  audit() { return this._audit; }
+  // reads
 
-  employeesById() { return new Map(this._employees.map((e) => [e.id, e])); }
-  rolesById() { return new Map(this._roles.map((r) => [r.id, r])); }
-  certTypesById() { return new Map(this._certTypes.map((c) => [c.id, c])); }
+  organization() { return { ...this.#get("SELECT id, name FROM organization") }; }
+
+  // rule thresholds. today is in the same table but has its own method
+  settings() {
+    const { today: _today, ...rules } = this.#settings();
+    return rules;
+  }
+  today() { return this.#settings().today; }
+
+  certTypes() {
+    return this.#all("SELECT * FROM cert_type ORDER BY rowid").map((r) =>
+      new CertType({ id: r.id, name: r.name, graceDays: r.grace_days, renewYears: r.renew_years }));
+  }
+
+  roles() {
+    const roleCerts = groupBy(this.#all("SELECT * FROM role_cert ORDER BY rowid"), "role_id");
+    return this.#all("SELECT * FROM role ORDER BY rowid").map((r) => new Role({
+      id: r.id, name: r.name,
+      certs: (roleCerts.get(r.id) || []).map((c) => ({ certTypeId: c.cert_type_id, onlyIf: c.only_if })),
+    }));
+  }
+
+  employees() {
+    const quals = groupBy(this.#all("SELECT * FROM qualification ORDER BY rowid"), "employee_id");
+    const certs = groupBy(this.#all("SELECT * FROM certificate ORDER BY id"), "employee_id");
+    const avail = groupBy(this.#all("SELECT * FROM availability ORDER BY id"), "employee_id");
+    const timeOff = groupBy(this.timeOff(), "employeeId");
+    return this.#all("SELECT * FROM employee ORDER BY rowid").map((r) => {
+      const e = new Employee({ id: r.id, name: r.name, dateOfBirth: r.date_of_birth,
+        hireDate: r.hire_date, status: r.status, maxHoursPreference: r.max_hours_preference });
+      e.qualifications = (quals.get(r.id) || []).map((q) =>
+        new Qualification({ roleId: q.role_id, hourlyRate: q.hourly_rate }));
+      e.certs = (certs.get(r.id) || []).map((c) =>
+        new Certificate({ certTypeId: c.cert_type_id, issuedOn: c.issued_on, expiresOn: c.expires_on }));
+      e.availability = (avail.get(r.id) || []).map((a) => new Availability({
+        weekday: a.weekday, startTime: a.start_time, endTime: a.end_time, effectiveFrom: a.effective_from }));
+      // all of them, R2 only looks at approved ones
+      e.timeOff = timeOff.get(r.id) || [];
+      return e;
+    });
+  }
+
+  timeOff() {
+    return this.#all("SELECT * FROM time_off_request ORDER BY rowid").map((r) => new TimeOffRequest({
+      id: r.id, employeeId: r.employee_id, startDate: r.start_date, endDate: r.end_date,
+      reason: r.reason, status: r.status,
+    }));
+  }
+
+  currentPeriod() {
+    const p = this.#get("SELECT * FROM schedule_period ORDER BY start_date DESC LIMIT 1");
+    const period = new SchedulePeriod({ id: p.id, startDate: p.start_date, endDate: p.end_date,
+      status: p.status, budget: p.budget, publishedOn: p.published_on });
+    const duties = groupBy(this.#all("SELECT * FROM shift_duty ORDER BY rowid"), "shift_id");
+    this.#all("SELECT * FROM shift WHERE period_id = ? ORDER BY rowid", p.id).forEach((r) =>
+      period.addShift(new Shift({
+        id: r.id, periodId: r.period_id, roleId: r.role_id, date: r.date, startTime: r.start_time,
+        endTime: r.end_time, required: r.required, employeeId: r.employee_id, status: r.status,
+        overrideReason: r.override_reason, duties: (duties.get(r.id) || []).map((d) => d.duty),
+      })));
+    return period;
+  }
+
+  swaps() {
+    return this.#all("SELECT * FROM swap_request ORDER BY rowid").map((r) => new SwapRequest({
+      id: r.id, shiftId: r.shift_id, postedBy: r.posted_by, claimedBy: r.claimed_by, status: r.status,
+      postedOn: r.posted_on, decidedOn: r.decided_on, note: r.note,
+    }));
+  }
+
+  notices() {
+    return this.#all("SELECT * FROM notice ORDER BY rowid").map((r) =>
+      ({ id: r.id, employeeId: r.employee_id, text: r.text }));
+  }
+
+  audit() {
+    return this.#all("SELECT at, what FROM audit_entry ORDER BY id").map((r) => ({ at: r.at, what: r.what }));
+  }
+
+  employeesById() { return new Map(this.employees().map((e) => [e.id, e])); }
+  rolesById() { return new Map(this.roles().map((r) => [r.id, r])); }
+  certTypesById() { return new Map(this.certTypes().map((c) => [c.id, c])); }
 
   nextId(kind) {
-    const { n } = this.db.prepare(`INSERT INTO id_counter (kind, next) VALUES (?, 2)
-      ON CONFLICT (kind) DO UPDATE SET next = next + 1 RETURNING next - 1 AS n`).get(kind);
+    const { n } = this.#get(`INSERT INTO id_counter (kind, next) VALUES (?, 2)
+      ON CONFLICT (kind) DO UPDATE SET next = next + 1 RETURNING next - 1 AS n`, kind);
     return `${kind}-${n}`;
   }
 
   // writes
 
   saveShift(s) {
-    this.db.prepare("UPDATE shift SET employee_id = ?, status = ?, override_reason = ? WHERE id = ?")
-      .run(v(s.employeeId), s.status, v(s.overrideReason), s.id);
+    this.#run("UPDATE shift SET employee_id = ?, status = ?, override_reason = ? WHERE id = ?",
+      v(s.employeeId), s.status, v(s.overrideReason), s.id);
   }
 
   savePeriod(p) {
     this.transaction(() => {
-      this.db.prepare("UPDATE schedule_period SET status = ?, published_on = ?, budget = ? WHERE id = ?")
-        .run(p.status, v(p.publishedOn), p.budget, p.id);
+      this.#run("UPDATE schedule_period SET status = ?, published_on = ?, budget = ? WHERE id = ?",
+        p.status, v(p.publishedOn), p.budget, p.id);
       p.shifts.forEach((s) => this.saveShift(s));
     });
   }
 
+  // UC-01. replaces anything starting on or after this date. older rows stay
+  // so earlier dates still get checked against what was true back then
+  saveAvailability(employeeId, effectiveFrom, slots) {
+    this.transaction(() => {
+      this.#run("DELETE FROM availability WHERE employee_id = ? AND effective_from >= ?", employeeId, effectiveFrom);
+      slots.forEach((a) => this.#run(`INSERT INTO availability (employee_id, weekday, start_time, end_time,
+        effective_from) VALUES (?, ?, ?, ?, ?)`, employeeId, a.weekday, a.startTime, a.endTime, effectiveFrom));
+    });
+  }
+
+  addTimeOff(t) {
+    this.#run(`INSERT INTO time_off_request (id, employee_id, start_date, end_date, reason, status)
+      VALUES (?, ?, ?, ?, ?, ?)`, t.id, t.employeeId, t.startDate, t.endDate, v(t.reason), t.status);
+  }
+
   saveTimeOff(t) {
-    this.db.prepare("UPDATE time_off_request SET status = ? WHERE id = ?").run(t.status, t.id);
+    this.#run("UPDATE time_off_request SET status = ? WHERE id = ?", t.status, t.id);
   }
 
   addSwap(sw) {
-    this.db.prepare(`INSERT INTO swap_request (id, shift_id, posted_by, claimed_by, status, posted_on, decided_on, note)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(sw.id, sw.shiftId, sw.postedBy, v(sw.claimedBy), sw.status, sw.postedOn, v(sw.decidedOn), v(sw.note));
-    this._swaps.push(sw);
+    this.#run(`INSERT INTO swap_request (id, shift_id, posted_by, claimed_by, status, posted_on, decided_on, note)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      sw.id, sw.shiftId, sw.postedBy, v(sw.claimedBy), sw.status, sw.postedOn, v(sw.decidedOn), v(sw.note));
   }
 
   saveSwap(sw) {
-    this.db.prepare("UPDATE swap_request SET claimed_by = ?, status = ?, decided_on = ?, note = ? WHERE id = ?")
-      .run(v(sw.claimedBy), sw.status, v(sw.decidedOn), v(sw.note), sw.id);
+    this.#run("UPDATE swap_request SET claimed_by = ?, status = ?, decided_on = ?, note = ? WHERE id = ?",
+      v(sw.claimedBy), sw.status, v(sw.decidedOn), v(sw.note), sw.id);
   }
 
   addNotice(n) {
-    this.db.prepare("INSERT INTO notice (id, employee_id, text) VALUES (?, ?, ?)").run(n.id, n.employeeId, n.text);
-    this._notices.push(n);
+    this.#run("INSERT INTO notice (id, employee_id, text) VALUES (?, ?, ?)", n.id, n.employeeId, n.text);
   }
 
   addAudit(a) {
-    this.db.prepare("INSERT INTO audit_entry (at, what) VALUES (?, ?)").run(a.at, a.what);
-    this._audit.push(a);
+    this.#run("INSERT INTO audit_entry (at, what) VALUES (?, ?)", a.at, a.what);
   }
 
   // savepoints instead of BEGIN so these can nest
@@ -116,66 +199,17 @@ class SqliteRepository {
 
   close() { this.db.close(); }
 
-  // rows -> domain objects
-  #load() {
-    const all = (sql) => this.db.prepare(sql).all();
-    const settings = Object.fromEntries(all("SELECT key, value FROM setting")
-      .map((r) => [r.key, JSON.parse(r.value)]));
-    const { today, ...ruleSettings } = settings;
-    this._today = today;
-    this.settings = ruleSettings;
-    this.organization = { ...all("SELECT id, name FROM organization")[0] };
+  // reuse prepared statements since these queries run on every request
+  #stmt(sql) {
+    if (!this.statements.has(sql)) this.statements.set(sql, this.db.prepare(sql));
+    return this.statements.get(sql);
+  }
+  #all(sql, ...params) { return this.#stmt(sql).all(...params); }
+  #get(sql, ...params) { return this.#stmt(sql).get(...params); }
+  #run(sql, ...params) { return this.#stmt(sql).run(...params); }
 
-    this._certTypes = all("SELECT * FROM cert_type ORDER BY rowid").map((r) =>
-      new CertType({ id: r.id, name: r.name, graceDays: r.grace_days, renewYears: r.renew_years }));
-
-    const roleCerts = groupBy(all("SELECT * FROM role_cert ORDER BY rowid"), "role_id");
-    this._roles = all("SELECT * FROM role ORDER BY rowid").map((r) => new Role({
-      id: r.id, name: r.name,
-      certs: (roleCerts.get(r.id) || []).map((c) => ({ certTypeId: c.cert_type_id, onlyIf: c.only_if })),
-    }));
-
-    const quals = groupBy(all("SELECT * FROM qualification ORDER BY rowid"), "employee_id");
-    const certs = groupBy(all("SELECT * FROM certificate ORDER BY id"), "employee_id");
-    const avail = groupBy(all("SELECT * FROM availability ORDER BY id"), "employee_id");
-    this._timeOff = all("SELECT * FROM time_off_request ORDER BY rowid").map((r) => new TimeOffRequest({
-      id: r.id, employeeId: r.employee_id, startDate: r.start_date, endDate: r.end_date,
-      reason: r.reason, status: r.status,
-    }));
-    const timeOff = groupBy(this._timeOff, "employeeId");
-
-    this._employees = all("SELECT * FROM employee ORDER BY rowid").map((r) => {
-      const e = new Employee({ id: r.id, name: r.name, dateOfBirth: r.date_of_birth,
-        hireDate: r.hire_date, status: r.status, maxHoursPreference: r.max_hours_preference });
-      e.qualifications = (quals.get(r.id) || []).map((q) =>
-        new Qualification({ roleId: q.role_id, hourlyRate: q.hourly_rate }));
-      e.certs = (certs.get(r.id) || []).map((c) =>
-        new Certificate({ certTypeId: c.cert_type_id, issuedOn: c.issued_on, expiresOn: c.expires_on }));
-      e.availability = (avail.get(r.id) || []).map((a) => new Availability({
-        weekday: a.weekday, startTime: a.start_time, endTime: a.end_time, effectiveFrom: a.effective_from }));
-      // all of them, R2 only looks at approved ones
-      e.timeOff = timeOff.get(r.id) || [];
-      return e;
-    });
-
-    const p = all("SELECT * FROM schedule_period ORDER BY start_date DESC LIMIT 1")[0];
-    this._period = new SchedulePeriod({ id: p.id, startDate: p.start_date, endDate: p.end_date,
-      status: p.status, budget: p.budget, publishedOn: p.published_on });
-    const duties = groupBy(all("SELECT * FROM shift_duty ORDER BY rowid"), "shift_id");
-    this.db.prepare("SELECT * FROM shift WHERE period_id = ? ORDER BY rowid").all(p.id).forEach((r) =>
-      this._period.addShift(new Shift({
-        id: r.id, periodId: r.period_id, roleId: r.role_id, date: r.date, startTime: r.start_time,
-        endTime: r.end_time, required: r.required, employeeId: r.employee_id, status: r.status,
-        overrideReason: r.override_reason, duties: (duties.get(r.id) || []).map((d) => d.duty),
-      })));
-
-    this._swaps = all("SELECT * FROM swap_request ORDER BY rowid").map((r) => new SwapRequest({
-      id: r.id, shiftId: r.shift_id, postedBy: r.posted_by, claimedBy: r.claimed_by, status: r.status,
-      postedOn: r.posted_on, decidedOn: r.decided_on, note: r.note,
-    }));
-    this._notices = all("SELECT * FROM notice ORDER BY rowid").map((r) =>
-      ({ id: r.id, employeeId: r.employee_id, text: r.text }));
-    this._audit = all("SELECT at, what FROM audit_entry ORDER BY id").map((r) => ({ at: r.at, what: r.what }));
+  #settings() {
+    return Object.fromEntries(this.#all("SELECT key, value FROM setting").map((r) => [r.key, JSON.parse(r.value)]));
   }
 
   // demo data from seed.js -> rows

@@ -28,8 +28,8 @@ classDiagram
     RuleFactory ..> Rule : creates
     RuleEngine --> "1" Rule : holds one
 
-    %% The diamond belongs on the whole, so it sits at CompositeRule.
-    %% The original PNG has it at the Rule end, which reads backwards.
+    %% the diamond goes on the whole (CompositeRule).
+    %% the old PNG had it on the Rule end, which is backwards
     CompositeRule o-- "*" Rule : children
 
     Rule <|.. CompositeRule

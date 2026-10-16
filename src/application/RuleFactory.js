@@ -1,6 +1,6 @@
 const R = require("../domain/rules");
 
-// Factory: builds the rule tree + thresholds so the engine doesn't have to
+// Factory: builds the rule tree so the engine doesn't have to
 class RuleFactory {
   static rulesFor(_organization) {
     const blocking = new R.CompositeRule("blocking", "Rules that stop publishing", [

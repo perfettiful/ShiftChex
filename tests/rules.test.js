@@ -1,10 +1,10 @@
 const { describe, test } = require("node:test");
 const assert = require("node:assert/strict");
 const R = require("../src/domain/rules");
-const { TimeOffRequest } = require("../src/domain");
+const { TimeOffRequest, Availability } = require("../src/domain");
 const { ctx, person, shift } = require("./helpers");
 
-// each rule on its own: a pass, a fail, and the edge wherever there's a threshold
+// each rule by itself. one that passes, one that fails, and the edge case if there's a threshold
 
 describe("rule tests", () => {
   describe("R1 availability", () => {
@@ -21,6 +21,16 @@ describe("rule tests", () => {
     });
     test("edge: exactly her window is fine", () => {
       assert.equal(run(shift({ employeeId: "e1", start: "16:00", end: "23:00" })).length, 0);
+    });
+    test("only the newest declaration that has started counts", () => {
+      // all day since 2020, then from october only monday evenings
+      const e = person("e1", "Riya");
+      e.availability.push(new Availability({ weekday: 1, startTime: "16:00", endTime: "23:00", effectiveFrom: "2026-10-01" }));
+      const check = (date, start, end) => new R.AvailabilityRule()
+        .check(ctx({ shifts: [shift({ employeeId: "e1", date, start, end })], employees: [e] })).length;
+      assert.equal(check("2026-10-12", "17:00", "22:00"), 0);
+      assert.equal(check("2026-10-12", "11:00", "17:00"), 1);
+      assert.equal(check("2026-10-13", "17:00", "22:00"), 1);
     });
     test("an override turns it into a warning", () => {
       const v = run(shift({ employeeId: "e1", start: "11:00", end: "17:00", overrideReason: "asked her" }));
