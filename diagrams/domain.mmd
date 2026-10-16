@@ -25,11 +25,18 @@ classDiagram
     }
     class Qualification {
         hourlyRate
-        certExpiresOn
     }
     class Role {
         name
-        requiresCert
+    }
+    class CertType {
+        name
+        graceDays
+        renewYears
+    }
+    class Certificate {
+        issuedOn
+        expiresOn
     }
     class Shift {
         date
@@ -60,3 +67,6 @@ classDiagram
     Shift "1" -- "0..*" SwapRequest : subject of
     Shift "*" -- "1" Role : requires
     Shift "*" -- "1" SchedulePeriod : belongs to
+    Employee "1" -- "*" Certificate : holds
+    Certificate "*" -- "1" CertType : of
+    Role "*" -- "*" CertType : requires

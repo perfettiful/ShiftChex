@@ -21,6 +21,7 @@ flowchart LR
         UC10(["UC-10 Approve or Deny Time Off"])
         UC11(["UC-11 View Coverage and Labor Report"])
         UC07(["UC-07 Validate Schedule Against Rules"])
+        UC12(["UC-12 Override a Violation"])
     end
 
     Employee --- UC01 & UC02 & UC03 & UC04 & UC05
@@ -28,6 +29,7 @@ flowchart LR
 
     UC05 -. «include» .-> UC07
     UC06 -. «include» .-> UC07
+    UC12 -. «extend» .-> UC06
     UC08 -. «include» .-> UC07
 
     classDef actor fill:#ffffff,stroke:#333333,stroke-width:2px,font-weight:bold

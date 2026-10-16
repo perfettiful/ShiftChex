@@ -8,6 +8,24 @@ classDiagram
         +assign(shiftId, empId)
         +validate(periodId)
         +publish(periodId)
+        +decideTimeOff(requestId, decision)
+    }
+    class AvailabilityController {
+        +declare(employeeId, effectiveFrom, slots)
+        +requestTimeOff(employeeId, startDate, endDate, reason)
+    }
+    class Employee {
+        -name
+        -dateOfBirth
+        +availabilityOn(date)
+        +isAvailableOn(date, start, end)
+        +hasApprovedTimeOffOn(date)
+    }
+    class TimeOffRequest {
+        -startDate
+        -endDate
+        -status
+        +overlaps(startDate, endDate)
     }
     class SchedulePeriod {
         -status
@@ -50,6 +68,9 @@ classDiagram
 
     ScheduleController --> RuleEngine : uses
     ScheduleController --> SchedulePeriod : manages
+    AvailabilityController --> Employee : updates
+    AvailabilityController ..> TimeOffRequest : creates
+    Employee "1" --> "*" TimeOffRequest : has
     SchedulePeriod "1" --> "*" Shift : contains
     RuleEngine "1" --> "*" Rule : holds
     RuleEngine ..> Violation : creates

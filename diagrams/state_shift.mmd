@@ -7,7 +7,7 @@ stateDiagram-v2
     Published --> OpenForSwap : postForSwap
     OpenForSwap --> Claimed : claim
     Claimed --> Published : approve / reassign
-    Claimed --> OpenForSwap : deny
+    Claimed --> Published : deny (stays with whoever posted it)
     Published --> Worked : shift ends, attended
     Published --> NoShow : shift ends, absent
     Worked --> [*]

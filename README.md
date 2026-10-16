@@ -220,6 +220,24 @@ The `ui` code never goes to the database itself, it only calls controllers.
 The repository gets created in one place, `application/wiring.js`, which hands
 it to the controllers.
 
+### Diagrams
+
+The Mermaid sources for our design diagrams are in `diagrams/`. The Mermaid
+extension in VS Code previews them.
+
+| File | What it is |
+|---|---|
+| `usecase.mmd` | use case diagram |
+| `domain.mmd` | domain model |
+| `erd.mmd` | data model (the database tables) |
+| `classdiagram.mmd` | design class diagram |
+| `packages.mmd`, `architecture.mmd` | packages and layers |
+| `ssd_publish.mmd`, `ssd_claim.mmd`, `ssd_availability.mmd`, `ssd_timeoff.mmd` | system sequence diagrams |
+| `sd_validate.mmd`, `sd_claim.mmd` | sequence diagrams |
+| `state_shift.mmd`, `state_swap.mmd` | state machines |
+| `activity_claim.mmd` | activity diagram for claiming a shift |
+| `gof_rules.mmd` | the GoF patterns around the rules |
+
 ### Patterns
 
 | Pattern | Where |
