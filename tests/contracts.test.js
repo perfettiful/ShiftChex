@@ -11,8 +11,14 @@ function posted() {
   const shift = app.repo.currentPeriod().shifts.find((s) =>
     s.date === "2026-10-12" && s.roleId === "server" && s.startTime === "11:00" && s.employeeId === "e1");
   const { swap } = app.swaps.post(shift.id, "e1");
-  return { app, shift, swap };
+  return { app, shiftId: shift.id, swapId: swap.id };
 }
+
+// read back from the database, not the objects the controller was handed
+const saved = (app, shiftId, swapId) => ({
+  shift: app.repo.currentPeriod().shifts.find((s) => s.id === shiftId),
+  swap: app.repo.swaps().find((s) => s.id === swapId),
+});
 
 describe("contract tests", () => {
   describe("publish(periodId)", () => {
@@ -47,8 +53,9 @@ describe("contract tests", () => {
 
   describe("claimShift(shiftId, employeeId)", () => {
     test("swap is tied to the shift and the claimer, both marked claimed", () => {
-      const { app, shift, swap } = posted();
-      assert.ok(app.swaps.claim(swap.id, "e3").ok);
+      const { app, shiftId, swapId } = posted();
+      assert.ok(app.swaps.claim(swapId, "e3").ok);
+      const { shift, swap } = saved(app, shiftId, swapId);
       assert.equal(swap.shiftId, shift.id);
       assert.equal(swap.claimedBy, "e3");
       assert.equal(swap.status, "claimed");
@@ -56,8 +63,9 @@ describe("contract tests", () => {
     });
     test("a refused claim changes nothing", () => {
       // riya only works evenings
-      const { app, shift, swap } = posted();
-      assert.ok(app.swaps.claim(swap.id, "e8").refused);
+      const { app, shiftId, swapId } = posted();
+      assert.ok(app.swaps.claim(swapId, "e8").refused);
+      const { shift, swap } = saved(app, shiftId, swapId);
       assert.equal(swap.status, "posted");
       assert.equal(swap.claimedBy, null);
       assert.equal(shift.status, "openForSwap");

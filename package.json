@@ -2,12 +2,12 @@
   "name": "shiftchex",
   "version": "1.0.0",
   "description": "ShiftChex prototype. ICS 370 Group 3.",
-  "main": "server.js",
+  "main": "src/ui/server.js",
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node src/ui/server.js",
     "test": "node --test",
     "db:migrate": "node scripts/db.js migrate",
     "db:seed": "node scripts/db.js seed",

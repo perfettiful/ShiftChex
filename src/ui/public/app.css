@@ -98,3 +98,18 @@ td.cell.off{background:#f4f6f9}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--dark);
   color:#fff;padding:11px 18px;border-radius:6px;max-width:640px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 .toast.bad{background:var(--red)}
+
+/* forms (availability, time off) */
+input[type=date],input[type=time],input[type=text]{font:inherit;padding:5px 8px;border:1px solid var(--line);
+  border-radius:4px;background:#fff;color:var(--ink)}
+input:disabled{background:#eceef2;color:#a3aab6}
+.field{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600;color:var(--mut)}
+.field input{font-weight:400}
+.card.form{display:grid;gap:12px;max-width:640px}
+.card.form .row{align-items:flex-end}
+.card.form p{margin:0}
+.check{display:flex;align-items:center;gap:8px;font-weight:600}
+table.avail{min-width:0;width:auto}
+table.avail th,table.avail td{border:none;border-bottom:1px solid var(--line);padding:6px 18px 6px 0;text-align:left}
+table.avail thead th{background:none;padding-left:0}
+.card.notice{border-left:4px solid var(--blue);background:var(--bluebg)}

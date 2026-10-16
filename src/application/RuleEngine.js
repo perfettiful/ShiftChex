@@ -1,9 +1,8 @@
 // Pure Fabrication. not a real domain concept, just keeps all the rule
 // checking in one place instead of spread across Shift/Employee
 class RuleEngine {
-  constructor(root, settings) {
+  constructor(root) {
     this.root = root;       // root of the rule tree
-    this.settings = settings;
   }
 
   // check whole period (UC-06, UC-08)
@@ -35,7 +34,8 @@ class RuleEngine {
       employeeById: repo.employeesById(),
       roleById: repo.rolesById(),
       certTypeById: repo.certTypesById(),
-      settings: this.settings,
+      // read on every check, so a changed threshold applies without a restart
+      settings: repo.settings(),
       today: repo.today(),
     };
   }

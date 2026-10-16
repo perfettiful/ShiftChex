@@ -1,6 +1,6 @@
 const Rule = require("./Rule");
 const CompositeRule = require("./CompositeRule");
-const { Violation } = require("../index");
+const { Violation, DUTIES } = require("../index");
 
 const assignedShifts = (ctx) => ctx.shifts.filter((s) => s.isAssigned());
 const emp = (ctx, id) => ctx.employeeById.get(id);
@@ -16,7 +16,6 @@ const dayName = (d) => new Date(d + "T12:00:00")
 const fullDate = (d) => new Date(d + "T12:00:00")
   .toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
 const certName = (ctx, id) => ctx.certTypeById.get(id).name;
-const DUTIES = { carriesDrinks: "carries drinks", checksIds: "checks IDs" };
 
 // R1
 class AvailabilityRule extends Rule {

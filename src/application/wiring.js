@@ -3,6 +3,8 @@ const RuleFactory = require("./RuleFactory");
 const RuleEngine = require("./RuleEngine");
 const ScheduleController = require("./ScheduleController");
 const SwapController = require("./SwapController");
+const AvailabilityController = require("./AvailabilityController");
+const SessionController = require("./SessionController");
 const EventBus = require("./events");
 
 // wires everything together
@@ -10,9 +12,11 @@ const EventBus = require("./events");
 function buildApp({ db } = {}) {
   const repo = new Repository(db);
   const events = new EventBus();
-  const engine = new RuleEngine(RuleFactory.rulesFor(repo.organization), repo.settings);
+  const engine = new RuleEngine(RuleFactory.rulesFor(repo.organization()));
   const schedule = new ScheduleController(repo, engine, events);
   const swaps = new SwapController(repo, engine, events);
+  const availability = new AvailabilityController(repo);
+  const session = new SessionController(repo, schedule, swaps);
 
   // observers
   events.on("schedule.published", ({ period }) => {
@@ -29,6 +33,6 @@ function buildApp({ db } = {}) {
     repo.addAudit({ at: repo.today(), what: `Swap ${swap.id} ${swap.status}` });
   });
 
-  return { repo, events, engine, schedule, swaps };
+  return { repo, events, engine, schedule, swaps, availability, session, file: repo.file };
 }
 module.exports = { buildApp };

@@ -23,12 +23,16 @@ class Employee {
   }
   isMinorOn(date) { return this.ageOn(date) < 18; }
 
+  // the declaration in force on a date is the newest one that started on or before it (UC-01)
+  availabilityOn(date) {
+    const from = this.availability.map((a) => a.effectiveFrom).filter((f) => f <= date).sort().pop();
+    return this.availability.filter((a) => a.effectiveFrom === from);
+  }
   // Information Expert: employee has the availability data
   isAvailableOn(date, startTime, endTime) {
     const weekday = new Date(date + "T12:00:00").getDay();
-    return this.availability.some((a) =>
-      a.weekday === weekday && a.effectiveFrom <= date &&
-      a.startTime <= startTime && a.endTime >= endTime);
+    return this.availabilityOn(date).some((a) =>
+      a.weekday === weekday && a.startTime <= startTime && a.endTime >= endTime);
   }
   hasApprovedTimeOffOn(date) {
     return this.timeOff.some((t) => t.status === "approved" && t.startDate <= date && t.endDate >= date);
@@ -97,6 +101,7 @@ class TimeOffRequest {
   constructor({ id, employeeId, startDate, endDate, reason, status = "pending" }) {
     Object.assign(this, { id, employeeId, startDate, endDate, reason, status });
   }
+  overlaps(startDate, endDate) { return this.startDate <= endDate && this.endDate >= startDate; }
 }
 
 class Shift {
@@ -149,5 +154,8 @@ class Violation {
   get blocks() { return this.severity === "blocking"; }
 }
 
+// what a shift duty means in words. rules use it in messages and the UI gets it from the API
+const DUTIES = { carriesDrinks: "carries drinks", checksIds: "checks IDs" };
+
 module.exports = { Employee, Role, Qualification, CertType, Certificate, Availability,
-                   TimeOffRequest, Shift, SchedulePeriod, SwapRequest, Violation };
+                   TimeOffRequest, Shift, SchedulePeriod, SwapRequest, Violation, DUTIES };
