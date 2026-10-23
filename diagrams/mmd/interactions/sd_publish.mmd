@@ -15,7 +15,7 @@ sequenceDiagram
     alt blocking violations open
         SC-->>Manager: refused, stays in draft
     else nothing blocking
-        Note over SC: period and its draft shifts set to published
+        Note over SC: period and its draft shifts<br/>set to published
         SC->>Repo: savePeriod(period)
         SC->>Bus: emit("schedule.published", period)
         Bus->>N: handler(period)

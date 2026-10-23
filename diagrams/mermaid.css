@@ -45,5 +45,15 @@ g.node:has(> g.methods-group:empty) > g.divider:last-of-type { display: none; }
 /* activity diagrams: the start node is a solid dot */
 g.node[id*="flowchart-start-"] circle, g.node[id*="flowchart-start-"] path { fill: #1a1a1a !important; stroke: #1a1a1a !important; }
 
-/* sequence diagram titles are a bare <text> at the top level */
-&[aria-roledescription="sequence"] > text { font-size: 20px !important; font-weight: 700; fill: #1a1a1a; }
+/* sequence diagram titles are the only bare <text> mermaid puts at y=-25. it centers them
+   2 x diagramMarginX (30) too far left, so this nudges them back to the middle */
+text:not([class])[y="-25"] { font-size: 20px !important; font-weight: 700; fill: #1a1a1a; text-anchor: middle; transform: translateX(60px); }
+
+/* stick figure: smaller white head, thinner lines, so it reads as a person and not a balloon */
+.actor-man line { stroke-width: 1.6px !important; }
+.actor-man.actor-top circle { r: 9px; cy: 16px; fill: #ffffff !important; stroke-width: 1.6px !important; }
+
+/* lifelines: mermaid only ends them properly when it draws the actors again at the
+   bottom, so it does that and we hide the bottom copies */
+.actor-bottom, g.actor-bottom, .actor-man.actor-bottom, rect.actor-bottom + text { display: none !important; }
+

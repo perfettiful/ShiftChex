@@ -71,21 +71,23 @@
     "useMaxWidth": false
   },
   "sequence": {
-    "actorMargin": 150,
+    "actorMargin": 70,
     "boxMargin": 12,
     "messageMargin": 40,
-    "mirrorActors": false,
+    "mirrorActors": true,
     "noteMargin": 14,
     "messageFontSize": 14,
     "actorFontSize": 15,
     "noteFontSize": 13,
     "showSequenceNumbers": false,
-    "wrap": true,
-    "width": 180,
+    "wrap": false,
+    "width": 110,
     "boxTextMargin": 8,
     "diagramMarginX": 30,
-    "diagramMarginY": 20,
-    "useMaxWidth": false
+    "diagramMarginY": 10,
+    "useMaxWidth": false,
+    "bottomMarginAdj": 0,
+    "height": 48
   },
   "er": {
     "layoutDirection": "LR",

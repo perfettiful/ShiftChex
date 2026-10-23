@@ -8,6 +8,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { trim } = require("./trim-png");
 
 const ROOT = path.join(__dirname, "..", "diagrams");
 const SRC = path.join(ROOT, "mmd");
@@ -46,8 +47,13 @@ for (const file of files) {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const run = spawnSync("npx", ["-y", CLI, "-q", "-i", path.join(SRC, file), "-o", out, ...args],
     { env, encoding: "utf8", shell: process.platform === "win32" });
-  if (run.status === 0) console.log(`  ${file} -> images/${rel}`);
-  else { failed++; console.log(`x ${file}\n${(run.stderr || run.stdout).trim()}`); }
+  if (run.status === 0) {
+    trim(out);  // same white margin on every side
+    console.log(`  ${file} -> images/${rel}`);
+  } else {
+    failed++;
+    console.log(`x ${file}\n${(run.stderr || run.stdout).trim()}`);
+  }
 }
 console.log(`${files.length - failed} rendered${failed ? `, ${failed} failed` : ""}`);
 process.exit(failed ? 1 : 0);
