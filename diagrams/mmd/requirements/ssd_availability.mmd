@@ -5,7 +5,7 @@ sequenceDiagram
     actor Employee
     participant System as :System
     Employee->>System: declare(effectiveFrom, slots)
-    alt a time is bad, two windows on one day, or the date is in the past
+    alt a time or the date is invalid
         System-->>Employee: error, nothing saved
     else
         System-->>Employee: saved

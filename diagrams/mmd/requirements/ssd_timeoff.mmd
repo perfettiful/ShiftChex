@@ -6,7 +6,7 @@ sequenceDiagram
     participant System as :System
     actor Manager
     Employee->>System: requestTimeOff(startDate, endDate, reason)
-    alt dates in the past, backwards, or already asked for
+    alt bad dates, or already requested
         System-->>Employee: error, nothing saved
     else
         System-->>Employee: saved as pending

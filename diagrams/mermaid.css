@@ -51,9 +51,7 @@ text:not([class])[y="-25"] { font-size: 20px !important; font-weight: 700; fill:
 
 /* stick figure: smaller white head, thinner lines, so it reads as a person and not a balloon */
 .actor-man line { stroke-width: 1.6px !important; }
-.actor-man.actor-top circle { r: 9px; cy: 16px; fill: #ffffff !important; stroke-width: 1.6px !important; }
+.actor-man circle { fill: #ffffff !important; stroke-width: 2.6px !important;
+  transform-box: fill-box; transform-origin: center; transform: translateY(6px) scale(0.6); }
 
-/* lifelines: mermaid only ends them properly when it draws the actors again at the
-   bottom, so it does that and we hide the bottom copies */
-.actor-bottom, g.actor-bottom, .actor-man.actor-bottom, rect.actor-bottom + text { display: none !important; }
 

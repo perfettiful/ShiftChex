@@ -72,7 +72,7 @@
   },
   "sequence": {
     "actorMargin": 70,
-    "boxMargin": 12,
+    "boxMargin": 22,
     "messageMargin": 40,
     "mirrorActors": true,
     "noteMargin": 14,
@@ -84,10 +84,10 @@
     "width": 110,
     "boxTextMargin": 8,
     "diagramMarginX": 30,
-    "diagramMarginY": 10,
+    "diagramMarginY": 30,
     "useMaxWidth": false,
-    "bottomMarginAdj": 0,
-    "height": 48
+    "bottomMarginAdj": 1,
+    "height": 65
   },
   "er": {
     "layoutDirection": "LR",

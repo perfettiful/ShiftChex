@@ -14,7 +14,7 @@ sequenceDiagram
     SC->>+RE: validate(period, repo)
     RE->>Repo: employeesById(), rolesById(), settings()
     RE->>+Root: check(ctx)
-    loop blocking group, then warnings group, 11 rules in all
+    loop each rule, 11 in all
         Root->>R: check(ctx)
         R-->>Root: violations
     end
