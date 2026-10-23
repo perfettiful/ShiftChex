@@ -1,0 +1,10 @@
+---
+title: "SSD: View Coverage and Labor Report (UC-11)"
+---
+%% new in elab 2, the last use case
+sequenceDiagram
+    actor Manager
+    participant System as :System
+    Manager->>System: viewCoverageReport(periodId)
+    System-->>Manager: open shifts by day, labor cost against budget
+    System-->>Manager: people near overtime, certs expiring in the next 30 days

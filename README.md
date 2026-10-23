@@ -1,7 +1,5 @@
 # ShiftChex prototype
 
-ICS 370, Group 3.
-
 ShiftChex is a scheduling app for a small restaurant. The manager fills in the
 week, and every time they put someone on a shift the app checks it against the
 rules (are they available, are they 17, is their alcohol cert expired, etc).
@@ -222,21 +220,17 @@ it to the controllers.
 
 ### Diagrams
 
-The Mermaid sources for our design diagrams are in `diagrams/`. The Mermaid
-extension in VS Code previews them.
+The Mermaid sources are in folders under `diagrams/mmd/` (requirements, models,
+design, interactions, patterns, behavior) and the rendered pictures are in the
+same folders under `diagrams/images/`. [diagrams/README.md](diagrams/README.md) lists all of them
+and shows the main ones. After changing a `.mmd` file, run
 
-| File | What it is |
-|---|---|
-| `usecase.mmd` | use case diagram |
-| `domain.mmd` | domain model |
-| `erd.mmd` | data model (the database tables) |
-| `classdiagram.mmd` | design class diagram |
-| `packages.mmd`, `architecture.mmd` | packages and layers |
-| `ssd_publish.mmd`, `ssd_claim.mmd`, `ssd_availability.mmd`, `ssd_timeoff.mmd` | system sequence diagrams |
-| `sd_validate.mmd`, `sd_claim.mmd` | sequence diagrams |
-| `state_shift.mmd`, `state_swap.mmd` | state machines |
-| `activity_claim.mmd` | activity diagram for claiming a shift |
-| `gof_rules.mmd` | the GoF patterns around the rules |
+```
+npm run diagrams
+```
+
+to regenerate the images. They all share one theme (`diagrams/mermaid.config.json`
+and `diagrams/mermaid.css`) so they match.
 
 ### Patterns
 
@@ -247,6 +241,7 @@ extension in VS Code previews them.
 | Factory | `application/RuleFactory.js` |
 | Observer | `application/events.js`, hooked up in `application/wiring.js` |
 | Adapter | `persistence/repository.js`, turns SQLite rows into domain objects and back |
+| Facade | `application/RuleEngine.js`, two methods in front of the whole rule tree |
 | Pure Fabrication | `application/RuleEngine.js` |
 | Controller | `ScheduleController.js`, `SwapController.js`, `AvailabilityController.js`, `SessionController.js` in `application/` |
 | Information Expert | `Employee.isAvailableOn` and `Employee.certStatus` in `domain/index.js` |

@@ -1,0 +1,18 @@
+---
+title: "SSD: Publish Schedule (UC-08)"
+---
+sequenceDiagram
+    actor Manager
+    participant System as :System
+    loop once for every shift the manager fills
+        Manager->>System: assign(shiftId, employeeId)
+        System-->>Manager: saved, plus the current violations
+    end
+    Manager->>System: validate()
+    System-->>Manager: violation list
+    Manager->>System: publish()
+    alt nothing blocking
+        System-->>Manager: published, everyone on it notified
+    else blocking violations open
+        System-->>Manager: refused, period stays in draft
+    end

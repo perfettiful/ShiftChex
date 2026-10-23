@@ -1,0 +1,28 @@
+---
+title: "Sequence: Publish Schedule with Observer (UC-08)"
+---
+sequenceDiagram
+    actor Manager
+    participant SC as :ScheduleController
+    participant RE as :RuleEngine
+    participant Repo as :SqliteRepository
+    participant Bus as :EventBus
+    participant N as notify staff
+    participant A as audit log
+    Manager->>SC: publish()
+    SC->>+RE: validate(period, repo)
+    RE-->>-SC: result
+    alt blocking violations open
+        SC-->>Manager: refused, stays in draft
+    else nothing blocking
+        Note over SC: period and its draft shifts set to published
+        SC->>Repo: savePeriod(period)
+        SC->>Bus: emit("schedule.published", period)
+        Bus->>N: handler(period)
+        loop each employee on the schedule
+            N->>Repo: addNotice(notice)
+        end
+        Bus->>A: handler(period)
+        A->>Repo: addAudit(entry)
+        SC-->>Manager: published
+    end

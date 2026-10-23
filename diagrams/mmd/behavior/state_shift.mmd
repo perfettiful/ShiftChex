@@ -1,0 +1,12 @@
+---
+title: "State Machine: Shift"
+---
+stateDiagram-v2
+    direction LR
+    [*] --> Draft
+    Draft --> Published : publish
+    Published --> Draft : unpublish
+    Published --> OpenForSwap : post for swap
+    OpenForSwap --> Claimed : claim passes the rules
+    Claimed --> Published : approve (moves to claimer) / deny
+    Published --> [*] : week ends

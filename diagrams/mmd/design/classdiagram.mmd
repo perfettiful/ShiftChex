@@ -1,0 +1,90 @@
+---
+title: Design Class Diagram (Elaboration 2)
+config:
+  layout: elk
+---
+%% the application layer. every system operation from the SSDs lands on one
+%% of the four controllers, and only the repository ever sees SQL
+classDiagram
+    direction TB
+    class ScheduleController {
+        <<Controller>>
+        +validate() Result
+        +assign(shiftId, employeeId, overrideReason) Result
+        +publish() Result
+        +unpublish() Result
+        +decideTimeOff(requestId, decision) Result
+        +projectedCost() number
+    }
+    class SwapController {
+        <<Controller>>
+        +board(employeeId) Entry[]
+        +post(shiftId, employeeId) Result
+        +claim(swapId, employeeId) Result
+        +pending() Entry[]
+        +decide(swapId, decision) Result
+    }
+    class AvailabilityController {
+        <<Controller>>
+        +declare(employeeId, input) Result
+        +requestTimeOff(employeeId, input) Result
+    }
+    class SessionController {
+        <<Controller>>
+        +users() User[]
+        +authorize(userId, need) Check
+        +stateFor(user) State
+        +resetDemo() Result
+    }
+    class RuleEngine {
+        <<Pure Fabrication>>
+        -root Rule
+        +validate(period, repo) Result
+        +validateAssignment(shift, employeeId, period, repo) Result
+    }
+    class RuleFactory {
+        +rulesFor(organization)$ Rule
+    }
+    class Rule {
+        <<interface>>
+        +id
+        +appliesTo(scope) boolean
+        +check(ctx) Violation[]
+    }
+    class EventBus {
+        +on(name, handler)
+        +emit(name, payload)
+    }
+    class SqliteRepository {
+        <<Adapter>>
+        +currentPeriod() SchedulePeriod
+        +employees() Employee[]
+        +swaps() SwapRequest[]
+        +saveShift(shift)
+        +savePeriod(period)
+        +addSwap(swap)
+        +saveSwap(swap)
+        +addNotice(notice)
+        +addAudit(entry)
+        +transaction(fn)
+    }
+    class Violation {
+        +ruleId
+        +severity
+        +message
+        +shiftId
+        +blocks() boolean
+    }
+
+    SessionController --> ScheduleController
+    SessionController --> SwapController
+    ScheduleController --> RuleEngine
+    SwapController --> RuleEngine
+    ScheduleController --> EventBus
+    SwapController --> EventBus
+    ScheduleController --> SqliteRepository
+    SwapController --> SqliteRepository
+    AvailabilityController --> SqliteRepository
+    RuleEngine --> "1" Rule : root
+    RuleFactory ..> Rule : «create»
+    Rule ..> Violation : «create»

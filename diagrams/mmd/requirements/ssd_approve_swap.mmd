@@ -1,0 +1,18 @@
+---
+title: "SSD: Approve or Deny Swap (UC-09)"
+---
+%% new in elab 2. the rules run again here because the schedule
+%% can change between the claim and the decision
+sequenceDiagram
+    actor Manager
+    participant System as :System
+    Manager->>System: viewPendingSwaps()
+    System-->>Manager: claimed swaps, each with a fresh rule check
+    Manager->>System: decideSwap(swapId, decision)
+    alt approve, and the claimer still passes
+        System-->>Manager: approved, shift moved to the claimer
+    else approve, but a blocking rule fails now
+        System-->>Manager: refused, names the rule
+    else deny
+        System-->>Manager: denied, shift stays with whoever posted it
+    end

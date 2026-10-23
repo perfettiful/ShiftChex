@@ -1,0 +1,23 @@
+---
+title: "Activity: Certification Check, R10 (new in Elab 2)"
+config:
+  layout: elk
+---
+%% runs once for each cert the shift's role needs. "holds one" means a cert
+%% issued on or before the shift date, since that's the date that matters, not today.
+%% a duty-only cert (alcohol for a busser who carries drinks) only counts with that duty
+flowchart TB
+    start@{ shape: sm-circ } --> D1{"Holds one?"}
+    D1 -- yes --> D2{"Valid on the<br/>shift date?"}
+    D2 -- yes --> OK["OK"]:::good
+    D2 -- no --> B1["Block: expired.<br/>Renewals get no grace"]:::bad
+    D1 -- no --> D3{"New hire<br/>window?"}
+    D3 -- no --> B2["Block: needed<br/>before working"]:::bad
+    D3 -- yes --> D4{"Within hire date<br/>+ grace days?"}
+    D4 -- yes --> W1["Warn: new hire,<br/>still has until the deadline"]:::warn
+    D4 -- no --> B3["Block: the new hire<br/>window closed"]:::bad
+
+    classDef good fill:#e6f2ea,stroke:#3a3a3a
+    classDef warn fill:#fbf1dc,stroke:#3a3a3a
+    classDef bad fill:#f8e1e1,stroke:#3a3a3a
+

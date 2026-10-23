@@ -1,0 +1,16 @@
+---
+title: "SSD: Request Time Off (UC-02) and Decide It (UC-10)"
+---
+sequenceDiagram
+    actor Employee
+    participant System as :System
+    actor Manager
+    Employee->>System: requestTimeOff(startDate, endDate, reason)
+    alt dates in the past, backwards, or already asked for
+        System-->>Employee: error, nothing saved
+    else
+        System-->>Employee: saved as pending
+    end
+    Manager->>System: decideTimeOff(requestId, decision)
+    System-->>Manager: approved or denied, schedule checked again
+    Note over System,Manager: once approved, R2 blocks any shift the employee has on those days

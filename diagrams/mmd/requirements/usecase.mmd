@@ -1,0 +1,47 @@
+---
+title: Use Case Diagram (Elaboration 2)
+config:
+  layout: elk
+  elk:
+    nodePlacementStrategy: BRANDES_KOEPF
+---
+%% mermaid has no use case diagram, so this is a flowchart. ovals are the use cases,
+%% the outer box is the system boundary, dashed arrows are include / extend.
+%% the three borderless boxes just hold the columns in place
+flowchart LR
+    Employee["«actor»<br/><b>Employee</b>"]:::actor
+    subgraph ShiftChex["ShiftChex"]
+        direction LR
+        subgraph E[" "]
+            direction TB
+            UC01(["UC-01 Declare weekly availability"])
+            UC02(["UC-02 Request time off"])
+            UC03(["UC-03 View my schedule"])
+            UC04(["UC-04 Post shift for swap"])
+            UC05(["UC-05 Claim posted shift"])
+        end
+        subgraph Mid[" "]
+            direction TB
+            UC12(["UC-12 Override a violation"])
+            UC07(["UC-07 Validate schedule against rules"])
+        end
+        subgraph M[" "]
+            direction TB
+            UC06(["UC-06 Build draft schedule"])
+            UC08(["UC-08 Publish schedule"])
+            UC09(["UC-09 Approve or deny swap"])
+            UC10(["UC-10 Approve or deny time off"])
+            UC11(["UC-11 View coverage and labor report"])
+        end
+    end
+    Manager["«actor»<br/><b>Manager</b>"]:::actor
+    Employee --- UC01 & UC02 & UC03 & UC04 & UC05
+    UC06 & UC08 & UC09 & UC10 & UC11 --- Manager
+    UC05 -. "«include»" .-> UC07
+    UC06 -. "«include»" .-> UC07
+    UC08 -. "«include»" .-> UC07
+    UC12 -. "«extend»" .-> UC06
+    classDef actor fill:#ffffff,stroke:#3a3a3a,stroke-width:1.6px
+    style E fill:none,stroke:none
+    style Mid fill:none,stroke:none
+    style M fill:none,stroke:none

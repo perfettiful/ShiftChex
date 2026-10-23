@@ -1,0 +1,24 @@
+---
+title: Package Diagram (Elaboration 2)
+config:
+  layout: elk
+  flowchart:
+    wrappingWidth: 460
+---
+%% each box is a folder under src/. dashed arrows are dependencies and they
+%% only point down. application only reaches persistence in wiring.js
+flowchart TB
+    ui["<b>ui</b><br/>server.js, routes + role check<br/>public/ views"]
+    application["<b>application</b><br/>Schedule, Swap, Availability, Session controllers<br/>RuleEngine, RuleFactory, EventBus, wiring"]
+    domain["<b>domain</b><br/>Employee, Shift, SchedulePeriod, SwapRequest ...<br/>rules/ Rule, CompositeRule, R1 to R11"]
+    persistence["<b>persistence</b><br/>SqliteRepository, db.js<br/>migrations/*.sql, seed.js"]
+    scripts["<b>scripts</b><br/>db.js, diagrams.js"]
+    db[("data/shiftchex.db")]
+
+    ui -. "«use»" .-> application
+    application -. "«use»" .-> domain
+    application -. "«use» (wiring only)" .-> persistence
+    persistence -. "«use»" .-> domain
+    scripts -. "«use»" .-> persistence
+    persistence --- db
+

@@ -1,0 +1,38 @@
+---
+title: "GoF: Observer (what happens after publish and swap decisions)"
+---
+%% the controllers only emit an event. who listens is set up once in
+%% wiring.js, so adding something to "on publish" never touches the controller
+classDiagram
+    direction LR
+    class ScheduleController {
+        +publish()
+    }
+    class SwapController {
+        +decide(swapId, decision)
+    }
+    class EventBus {
+        -handlers Map
+        +on(name, handler)
+        +emit(name, payload)
+    }
+    class NotifyStaff["notify staff"] {
+        <<subscriber>>
+        on schedule.published
+    }
+    class AuditLog["audit log"] {
+        <<subscriber>>
+        on schedule.published
+        on swap.decided
+    }
+    class SqliteRepository {
+        +addNotice(notice)
+        +addAudit(entry)
+    }
+
+    ScheduleController --> EventBus : emit schedule.published
+    SwapController --> EventBus : emit swap.decided
+    EventBus --> "*" NotifyStaff : calls
+    EventBus --> "*" AuditLog : calls
+    NotifyStaff --> SqliteRepository : addNotice
+    AuditLog --> SqliteRepository : addAudit

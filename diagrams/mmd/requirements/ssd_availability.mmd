@@ -1,0 +1,13 @@
+---
+title: "SSD: Declare Weekly Availability (UC-01)"
+---
+sequenceDiagram
+    actor Employee
+    participant System as :System
+    Employee->>System: declare(effectiveFrom, slots)
+    alt a time is bad, two windows on one day, or the date is in the past
+        System-->>Employee: error, nothing saved
+    else
+        System-->>Employee: saved
+    end
+    Note over Employee,System: from effectiveFrom on, R1 checks shifts against the new availability

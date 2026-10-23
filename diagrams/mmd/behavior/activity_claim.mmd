@@ -1,0 +1,41 @@
+---
+title: "Activity: Claim and Approve a Posted Shift"
+config:
+  layout: elk
+---
+%% mermaid has no activity diagram, so each subgraph is a swimlane.
+%% small dot = start, ringed dot = end
+flowchart LR
+    subgraph Employee["Employee"]
+        direction TB
+        start@{ shape: sm-circ }
+        A1["Open the swap board"]
+        A3["Claim a shift"]
+    end
+    subgraph ShiftChex["ShiftChex"]
+        direction TB
+        A2["List posted shifts,<br/>each with its rule check"]
+        A4["Check the rules<br/>against the claimer"]
+        D1{"Passes?"}
+        A5["Refuse, show the rule"]
+        A6["Mark swap and<br/>shift claimed"]
+        A8["Check the rules again"]
+        D3{"Passes?"}
+        A9["Move the shift<br/>to the claimer"]
+        A10["Shift stays<br/>with the poster"]
+        stop1@{ shape: fr-circ }
+        stop2@{ shape: fr-circ }
+    end
+    subgraph Manager["Manager"]
+        direction TB
+        A7["Review the claim"]
+        D2{"Approve?"}
+    end
+    start --> A1 --> A2 --> A3 --> A4 --> D1
+    D1 -- no --> A5 --> stop1
+    D1 -- yes --> A6 --> A7 --> D2
+    D2 -- yes --> A8 --> D3
+    D3 -- yes --> A9 --> stop2
+    D3 -- no --> A10
+    D2 -- no --> A10 --> stop2
+

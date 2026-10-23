@@ -1,0 +1,33 @@
+---
+title: "GoF: Adapter (SqliteRepository)"
+---
+%% controllers ask for domain objects and hand domain objects back.
+%% the repository turns them into rows and SQL, so nothing above it knows sqlite exists
+classDiagram
+    direction LR
+    class ScheduleController
+    class SwapController
+    class SqliteRepository {
+        <<Adapter>>
+        +currentPeriod() SchedulePeriod
+        +employees() Employee[]
+        +saveShift(shift)
+        +savePeriod(period)
+        +addSwap(swap)
+        +transaction(fn)
+    }
+    class DatabaseSync {
+        <<node:sqlite>>
+        +prepare(sql) Statement
+        +exec(sql)
+    }
+    class Shift
+    class SchedulePeriod
+    class Employee
+
+    ScheduleController --> SqliteRepository : domain objects
+    SwapController --> SqliteRepository : domain objects
+    SqliteRepository --> DatabaseSync : rows and SQL
+    SqliteRepository ..> Shift : «create» from rows
+    SqliteRepository ..> SchedulePeriod : «create» from rows
+    SqliteRepository ..> Employee : «create» from rows
