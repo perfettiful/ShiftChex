@@ -7,6 +7,9 @@ stateDiagram-v2
     Draft --> Published : publish
     Published --> Draft : unpublish
     Published --> OpenForSwap : post for swap
+    OpenForSwap --> Published : poster withdraws it
     OpenForSwap --> Claimed : claim passes the rules
     Claimed --> Published : approve (moves to claimer) / deny
+    OpenForSwap --> Draft : unpublish, swap cancelled
+    Claimed --> Draft : unpublish, swap cancelled
     Published --> [*] : week ends

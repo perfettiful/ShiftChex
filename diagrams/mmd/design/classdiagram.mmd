@@ -4,22 +4,24 @@ config:
   layout: elk
 ---
 %% the application layer. every system operation from the SSDs lands on one
-%% of the four controllers, and only the repository ever sees SQL
+%% of the five controllers, and only the repository ever sees SQL.
+%% a periodId that's left out means the week being worked on (the first draft)
 classDiagram
     direction TB
     class ScheduleController {
         <<Controller>>
-        +validate() Result
+        +validate(periodId) Result
         +assign(shiftId, employeeId, overrideReason) Result
-        +publish() Result
-        +unpublish() Result
+        +publish(periodId) Result
+        +unpublish(periodId) Result
         +decideTimeOff(requestId, decision) Result
-        +projectedCost() number
+        +projectedCost(periodId) number
     }
     class SwapController {
         <<Controller>>
         +board(employeeId) Entry[]
         +post(shiftId, employeeId) Result
+        +withdraw(swapId, employeeId) Result
         +claim(swapId, employeeId) Result
         +pending() Entry[]
         +decide(swapId, decision) Result
@@ -28,12 +30,18 @@ classDiagram
         <<Controller>>
         +declare(employeeId, input) Result
         +requestTimeOff(employeeId, input) Result
+        +cancelTimeOff(employeeId, requestId) Result
+    }
+    class ReportController {
+        <<Controller>>
+        +coverage(periodId) Report
     }
     class SessionController {
         <<Controller>>
-        +users() User[]
-        +authorize(userId, need) Check
-        +stateFor(user) State
+        +login(username, password) Result
+        +logout(token) Result
+        +authorizeToken(token, need) Check
+        +stateFor(user, periodId) State
         +resetDemo() Result
     }
     class RuleEngine {
@@ -43,12 +51,11 @@ classDiagram
         +validateAssignment(shift, employeeId, period, repo) Result
     }
     class RuleFactory {
-        +rulesFor(organization)$ Rule
+        +rulesFor()$ Rule
     }
     class Rule {
         <<interface>>
         +id
-        +appliesTo(scope) boolean
         +check(ctx) Violation[]
     }
     class EventBus {
@@ -57,7 +64,10 @@ classDiagram
     }
     class SqliteRepository {
         <<Adapter>>
-        +currentPeriod() SchedulePeriod
+        +periods() SchedulePeriod[]
+        +period(id) SchedulePeriod
+        +periodOfShift(shiftId) SchedulePeriod
+        +shiftsBetween(from, to) Shift[]
         +employees() Employee[]
         +swaps() SwapRequest[]
         +saveShift(shift)
@@ -73,11 +83,13 @@ classDiagram
         +severity
         +message
         +shiftId
+        +employeeId
         +blocks() boolean
     }
 
     SessionController --> ScheduleController
     SessionController --> SwapController
+    SessionController --> SqliteRepository
     ScheduleController --> RuleEngine
     SwapController --> RuleEngine
     ScheduleController --> EventBus
@@ -85,6 +97,7 @@ classDiagram
     ScheduleController --> SqliteRepository
     SwapController --> SqliteRepository
     AvailabilityController --> SqliteRepository
+    ReportController --> SqliteRepository
     RuleEngine --> "1" Rule : root
     RuleFactory ..> Rule : «create»
     Rule ..> Violation : «create»

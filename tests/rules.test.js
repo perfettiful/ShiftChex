@@ -70,10 +70,21 @@ describe("rule tests", () => {
       assert.equal(v.length, 1);
       assert.match(v[0].message, /9\.0 hours rest/);
     });
+    test("the server's time zone and daylight saving don't change the answer", () => {
+      // clocks go back the night of 10/31 in Chicago. it's still 9 hours on the schedule
+      const zone = process.env.TZ;
+      process.env.TZ = "America/Chicago";
+      try {
+        const v = run(shift({ employeeId: "e1", date: "2026-10-31", start: "14:00", end: "23:00" }),
+                      shift({ employeeId: "e1", date: "2026-11-01", start: "08:00", end: "17:00" }));
+        assert.match(v[0].message, /9\.0 hours rest/);
+      } finally {
+        if (zone === undefined) delete process.env.TZ; else process.env.TZ = zone;
+      }
+    });
     test("edge: exactly 10 hours is fine", () => {
       assert.equal(run(close(), open("09:00")).length, 0);
     });
-    // this used to come out as "-6.0 hours rest"
     test("overlapping shifts say double booked", () => {
       const v = run(shift({ employeeId: "e1", start: "17:00", end: "22:00" }),
                     shift({ employeeId: "e1", start: "17:00", end: "23:00" }));
@@ -87,6 +98,30 @@ describe("rule tests", () => {
                     shift({ employeeId: "e1", start: "15:00", end: "16:00" }));
       assert.equal(v.length, 2);
       v.forEach((x) => assert.match(x.message, /double booked/));
+    });
+
+    // the week is 10/12 to 10/18, so 10/11 and 10/19 belong to the weeks either side
+    const withNearby = (inWeek, nearby) => new R.RestRule().check(ctx({
+      shifts: [inWeek], nearby, employees: [person("e1", "Ben")] }));
+    test("closing the sunday before and opening monday blocks, on monday's shift", () => {
+      const lastSunday = shift({ employeeId: "e1", date: "2026-10-11", start: "16:00", end: "23:00" });
+      const monday = shift({ employeeId: "e1", date: "2026-10-12", start: "08:00", end: "16:00" });
+      const v = withNearby(monday, [lastSunday]);
+      assert.equal(v.length, 1);
+      assert.equal(v[0].shiftId, monday.id);
+      assert.match(v[0].message, /Sun, 10\/11.*9\.0 hours rest/);
+    });
+    test("closing sunday and opening the next monday blocks, on sunday's shift", () => {
+      const sunday = shift({ employeeId: "e1", date: "2026-10-18", start: "16:00", end: "23:00" });
+      const nextMonday = shift({ employeeId: "e1", date: "2026-10-19", start: "08:00", end: "16:00" });
+      const v = withNearby(sunday, [nextMonday]);
+      assert.equal(v.length, 1);
+      assert.equal(v[0].shiftId, sunday.id);
+    });
+    test("the weeks either side don't get checked against each other", () => {
+      const a = shift({ employeeId: "e1", date: "2026-10-11", start: "16:00", end: "23:00" });
+      const b = shift({ employeeId: "e1", date: "2026-10-11", start: "17:00", end: "18:00" });
+      assert.equal(withNearby(shift({ employeeId: "e1", date: "2026-10-14" }), [a, b]).length, 0);
     });
   });
 
@@ -112,6 +147,13 @@ describe("rule tests", () => {
     test("edge: exactly 8 hours is fine", () => {
       assert.equal(run(kai, "09:00", "17:00").length, 0);
     });
+    test("the cap is for the whole day, two short shifts can go over it", () => {
+      const v = new R.MinorHoursRule().check(ctx({ employees: [kai], shifts: [
+        shift({ employeeId: "e1", start: "08:00", end: "13:00" }),
+        shift({ employeeId: "e1", start: "15:00", end: "20:00" })] }));
+      assert.equal(v.length, 1);
+      assert.match(v[0].message, /would work 10 hours/);
+    });
   });
 
   describe("R5 qualification", () => {
@@ -134,9 +176,6 @@ describe("rule tests", () => {
     });
     test("an empty shift blocks", () => {
       assert.equal(new R.CoverageRule().check(ctx({ shifts: [shift()] })).length, 1);
-    });
-    test("doesn't run on a single assignment", () => {
-      assert.equal(new R.CoverageRule().appliesTo("assignment"), false);
     });
   });
 
@@ -189,6 +228,11 @@ describe("rule tests", () => {
     test("short notice warns", () => {
       assert.equal(run("2026-10-05")[0].severity, "warning");
     });
+    test("once it's published, it counts from the publish date, not today", () => {
+      const published = (publishedOn) => new R.NoticeRule().check(ctx({ today: "2026-10-12", publishedOn }));
+      assert.equal(published("2026-09-28").length, 0);
+      assert.match(published("2026-10-05")[0].message, /went out 7 days ahead/);
+    });
   });
 
   describe("R10 certifications", () => {
@@ -236,6 +280,13 @@ describe("rule tests", () => {
       const v = run("16:00");
       assert.equal(v.length, 1);
       assert.match(v[0].message, /4pm to 5pm/);
+    });
+    test("a new hire still inside their window doesn't count as holding it", () => {
+      // alcohol gives new hires 60 days, and jo was hired a week before
+      const jo = person("e3", "Jo", { hired: "2026-10-05" });
+      const v = new R.OnSiteCertRule().check(ctx({ settings: { siteCerts: ["alcohol"] }, employees: [jo],
+        shifts: [shift({ employeeId: "e3", start: "11:00", end: "17:00" })] }));
+      assert.equal(v.length, 1);
     });
   });
 });

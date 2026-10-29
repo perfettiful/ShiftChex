@@ -8,11 +8,13 @@ sequenceDiagram
     participant RE as :RuleEngine
     participant Root as all :CompositeRule
     participant R as :Rule
-    Manager->>SC: validate()
-    SC->>Repo: currentPeriod()
+    Manager->>SC: validate(periodId)
+    SC->>Repo: period(periodId)
     Repo-->>SC: period with its shifts
     SC->>+RE: validate(period, repo)
     RE->>Repo: employeesById(), rolesById(), settings()
+    RE->>Repo: shiftsBetween(day before, day after)
+    Note over RE,Repo: the days either side of the week,<br/>so R3 sees sunday night into monday
     RE->>+Root: check(ctx)
     loop each rule, 11 in all
         Root->>R: check(ctx)

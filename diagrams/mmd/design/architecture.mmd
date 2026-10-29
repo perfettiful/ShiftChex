@@ -5,7 +5,7 @@ title: Runtime Architecture (Elaboration 2)
 %% and the only thing it talks to is a sqlite file on disk
 flowchart LR
     subgraph Browser["Browser"]
-        V["Views<br/>schedule builder, approvals,<br/>swap board, availability, people"]
+        V["Views<br/>schedule builder, approvals, report,<br/>swap board, availability, people"]
     end
     subgraph Node["Node 22 process (npm start)"]
         S["server.js<br/>routes, sign in, role check"]

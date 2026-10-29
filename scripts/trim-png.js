@@ -1,6 +1,5 @@
-// crops a png to what's actually drawn on it and adds the same white margin on
-// every side. mermaid leaves uneven space around some diagrams (sequence diagrams
-// especially), so this keeps every image framed the same. node built-ins only
+// crops a png to what's drawn and adds the same white margin on every side, since
+// mermaid leaves uneven space around some diagrams. node built-ins only
 const fs = require("fs");
 const zlib = require("zlib");
 

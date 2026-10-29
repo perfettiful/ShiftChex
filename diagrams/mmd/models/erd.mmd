@@ -1,10 +1,12 @@
 ---
-title: Data Model (SQLite, from migrations 001 and 002)
+title: Data Model (SQLite, from migrations 001 to 005)
 config:
   layout: elk
 ---
-%% every table in 001_create_tables.sql except the small bookkeeping ones
-%% (organization, setting, id_counter, schema_migrations)
+%% every table from the migrations except the small bookkeeping ones
+%% (organization, setting, id_counter, schema_migrations). audit_entry stands on
+%% its own, the observers write plain sentences to it. the dashed line
+%% has no foreign key behind it, so a demo reset doesn't sign anyone out
 erDiagram
     direction TB
     schedule_period ||--o{ shift : contains
@@ -22,13 +24,14 @@ erDiagram
     employee ||--o{ availability : declares
     employee ||--o{ time_off_request : "asks for"
     employee ||--o{ notice : receives
+    employee |o--o| user_account : "signs in as"
+    user_account ||..o{ login_session : "signed in on"
 
     employee {
         text id PK
         text name
         text date_of_birth
         text hire_date
-        text status
         real max_hours_preference
     }
     role {
@@ -102,13 +105,31 @@ erDiagram
         text shift_id FK
         text posted_by FK
         text claimed_by FK
-        text status
+        text status "posted, claimed, approved, denied, withdrawn, cancelled"
         text posted_on
         text decided_on
-        text note
     }
     notice {
         text id PK
         text employee_id FK
         text text
+        text created_on "004"
+    }
+    user_account {
+        text id PK
+        text username UK
+        text password_hash
+        text name
+        text role "manager, employee"
+        text employee_id FK "null for the manager"
+    }
+    audit_entry {
+        int id PK
+        text at
+        text what
+    }
+    login_session {
+        text token PK "the cookie"
+        text user_id "no FK, see 003"
+        text created_at
     }

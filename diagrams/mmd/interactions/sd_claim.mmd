@@ -9,8 +9,8 @@ sequenceDiagram
     participant SR as :SwapRequest
     participant Sh as :Shift
     Employee->>SW: claim(swapId, employeeId)
-    SW->>Repo: swaps(), currentPeriod()
-    Repo-->>SW: swap, shift
+    SW->>Repo: swaps(), periodOfShift(shiftId)
+    Repo-->>SW: swap, the shift's week
     SW->>+RE: validateAssignment(shift, employeeId, period, repo)
     RE-->>-SW: result
     alt no blocking violation

@@ -9,7 +9,8 @@ sequenceDiagram
     participant Bus as :EventBus
     participant N as notify staff
     participant A as audit log
-    Manager->>SC: publish()
+    Manager->>SC: publish(periodId)
+    SC->>Repo: period(periodId)
     SC->>+RE: validate(period, repo)
     RE-->>-SC: result
     alt blocking violations open

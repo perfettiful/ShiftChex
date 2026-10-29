@@ -2,7 +2,7 @@ const R = require("../domain/rules");
 
 // Factory: builds the rule tree so the engine doesn't have to
 class RuleFactory {
-  static rulesFor(_organization) {
+  static rulesFor() {
     const blocking = new R.CompositeRule("blocking", "Rules that stop publishing", [
       new R.AvailabilityRule(),
       new R.TimeOffRule(),

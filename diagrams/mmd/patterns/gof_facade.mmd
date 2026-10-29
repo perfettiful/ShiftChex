@@ -1,8 +1,9 @@
 ---
 title: "GoF: Facade (RuleEngine)"
 ---
-%% two methods out front. behind them the engine gathers the lookups,
-%% walks the rule tree, keeps only the claimer's violations and splits them
+%% two methods out front. behind them the engine gathers the lookups and walks
+%% the rule tree. for one assignment it checks the week before and after the
+%% change and keeps only what's new for that person or the week as a whole
 classDiagram
     direction LR
     class ScheduleController

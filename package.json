@@ -7,7 +7,7 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node src/ui/server.js",
+    "start": "node src/ui/server.js --open",
     "test": "node --test",
     "db:migrate": "node scripts/db.js migrate",
     "db:seed": "node scripts/db.js seed",

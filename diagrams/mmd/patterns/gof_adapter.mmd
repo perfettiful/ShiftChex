@@ -9,7 +9,9 @@ classDiagram
     class SwapController
     class SqliteRepository {
         <<Adapter>>
-        +currentPeriod() SchedulePeriod
+        +periods() SchedulePeriod[]
+        +period(id) SchedulePeriod
+        +periodOfShift(shiftId) SchedulePeriod
         +employees() Employee[]
         +saveShift(shift)
         +savePeriod(period)

@@ -1,0 +1,26 @@
+---
+title: "Sequence: View Coverage and Labor Report (UC-11)"
+---
+%% read only. the report never writes anything, it only reads and adds up
+sequenceDiagram
+    actor Manager
+    participant RC as :ReportController
+    participant Repo as :SqliteRepository
+    participant P as :SchedulePeriod
+    participant E as :Employee
+    Manager->>RC: coverage(periodId)
+    RC->>Repo: period(periodId)
+    Repo-->>RC: the week with its shifts
+    RC->>Repo: employeesById(), rolesById(), settings()
+    loop each day of the week
+        RC->>P: shiftsOn(date)
+        Note over RC,P: open shifts, hours and<br/>labor cost for the day
+    end
+    loop each employee
+        RC->>E: requiredCerts(rolesById)
+        RC->>E: certStatus(type, today)
+        Note over RC,E: expired, missing, or due<br/>in the next 30 days
+    end
+    RC->>Repo: audit()
+    RC-->>Manager: open shifts by day, labor against budget,
+    RC-->>Manager: hours near overtime, certs coming due, overrides

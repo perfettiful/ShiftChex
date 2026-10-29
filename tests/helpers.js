@@ -23,12 +23,14 @@ const ROLES = [
 ];
 
 // just what the rules read. no repo, no server
+// nearby = shifts from the weeks either side, publishedOn = when this week went out
 function ctx({ shifts = [], employees = [], scope = "period", today = "2026-10-01",
-               budget = 10000, settings = {} } = {}) {
-  const period = new SchedulePeriod({ id: "p", startDate: "2026-10-12", endDate: "2026-10-18", budget });
+               budget = 10000, settings = {}, nearby = [], publishedOn = null } = {}) {
+  const period = new SchedulePeriod({ id: "p", startDate: "2026-10-12", endDate: "2026-10-18", budget,
+    publishedOn, status: publishedOn ? "published" : "draft" });
   period.shifts = shifts;
   return {
-    scope, period, shifts, today,
+    scope, period, shifts, today, nearby,
     settings: { ...SETTINGS, ...settings },
     employeeById: new Map(employees.map((e) => [e.id, e])),
     roleById: new Map(ROLES.map((r) => [r.id, r])),
@@ -55,7 +57,7 @@ function shift({ employeeId = null, roleId = "server", date = "2026-10-12", star
                      endTime: end, employeeId, duties, overrideReason });
 }
 
-// the four fills that clear the seeded week
+// the four fills that clear next week's draft
 const FILLS = [
   ["2026-10-18", "lead", "16:00", "e12"],
   ["2026-10-18", "cook", "08:00", "e6"],
@@ -65,7 +67,7 @@ const FILLS = [
 
 function publishable() {
   const app = buildApp();
-  const shifts = app.repo.currentPeriod().shifts;
+  const shifts = app.repo.workingPeriod().shifts;
   for (const [date, roleId, start, who] of FILLS) {
     const s = shifts.find((x) => x.date === date && x.roleId === roleId && x.startTime === start && !x.isAssigned());
     app.schedule.assign(s.id, who);
@@ -74,8 +76,12 @@ function publishable() {
 }
 
 const find = (app, date, roleId, start) =>
-  app.repo.currentPeriod().shifts.find((s) => s.date === date && s.roleId === roleId && s.startTime === start);
+  app.repo.workingPeriod().shifts.find((s) => s.date === date && s.roleId === roleId && s.startTime === start);
 
 const ruleIds = (violations) => violations.map((v) => v.ruleId).sort();
 
-module.exports = { ctx, person, shift, buildApp, publishable, find, ruleIds };
+// move the demo's "today". there's nothing in the app that changes it, so straight to the db
+const setToday = (app, date) =>
+  app.repo.db.prepare("UPDATE setting SET value = ? WHERE key = 'today'").run(JSON.stringify(date));
+
+module.exports = { ctx, person, shift, buildApp, publishable, find, ruleIds, setToday };
