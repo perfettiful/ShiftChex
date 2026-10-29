@@ -1,36 +1,37 @@
+const { addDays } = require("../domain/format");
+
 // Pure Fabrication. there's no "rule engine" in a real restaurant, we made it
 // up so all the checking lives in one spot instead of spread over Shift/Employee
 class RuleEngine {
   constructor(root) {
-    this.root = root;       // root of the rule tree
+    this.root = root;
   }
 
-  // check whole period (UC-06, UC-08)
+  // the whole week (UC-06, UC-07, UC-08)
   validate(period, repo) {
-    return this.#run({
-      scope: "period",
-      period,
-      shifts: period.shifts,
-      ...this.#lookups(repo),
-    });
+    return result(this.root.check(this.#context(period, repo)));
   }
 
-  // check a single assignment for a different employee (UC-05 claim)
+  // what putting employeeId on this shift would change (claims, approvals, overrides).
+  // compares the week before and after, and keeps what's new for that person or the whole week
   validateAssignment(shift, employeeId, period, repo) {
     const hypothetical = Object.create(Object.getPrototypeOf(shift));
-    Object.assign(hypothetical, shift, { employeeId });
-    const shifts = period.shifts.map((s) => (s.id === shift.id ? hypothetical : s));
-    return this.#run({
-      scope: "assignment",
-      period,
-      shifts,
-      subjectId: employeeId,
-      ...this.#lookups(repo),
-    });
+    // an override belongs to the person it was given for, so it doesn't come along
+    Object.assign(hypothetical, shift, { employeeId, overrideReason: null });
+    const ctx = this.#context(period, repo);
+    const before = new Set(this.root.check(ctx).map(key));
+    const after = this.root.check({ ...ctx, shifts: period.shifts.map((s) => (s.id === shift.id ? hypothetical : s)) });
+    return result(after.filter((v) => !before.has(key(v)) && (v.employeeId === employeeId || v.employeeId === null)));
   }
 
-  #lookups(repo) {
+  #context(period, repo) {
     return {
+      period,
+      shifts: period.shifts,
+      // the day before and after the week, for R3. only from published weeks: a draft
+      // can still change, and its own check catches it against this one
+      nearby: repo.shiftsBetween(addDays(period.startDate, -1), addDays(period.endDate, 1), { publishedOnly: true })
+        .filter((s) => s.periodId !== period.id),
       employeeById: repo.employeesById(),
       roleById: repo.rolesById(),
       certTypeById: repo.certTypesById(),
@@ -39,24 +40,17 @@ class RuleEngine {
       today: repo.today(),
     };
   }
-
-  #run(ctx) {
-    const violations = this.root.check(ctx);
-    // only care about the claimer's violations here
-    const relevant = ctx.scope === "assignment"
-      ? violations.filter((v) => this.#concerns(v, ctx))
-      : violations;
-    return {
-      violations: relevant,
-      blocking: relevant.filter((v) => v.blocks),
-      warnings: relevant.filter((v) => !v.blocks),
-      get ok() { return this.blocking.length === 0; },
-    };
-  }
-
-  #concerns(violation, ctx) {
-    const subject = ctx.employeeById.get(ctx.subjectId);
-    return subject ? violation.message.includes(subject.name) : true;
-  }
 }
+
+const key = (v) => `${v.ruleId}|${v.shiftId}|${v.message}`;
+
+function result(violations) {
+  return {
+    violations,
+    blocking: violations.filter((v) => v.blocks),
+    warnings: violations.filter((v) => !v.blocks),
+    get ok() { return this.blocking.length === 0; },
+  };
+}
+
 module.exports = RuleEngine;

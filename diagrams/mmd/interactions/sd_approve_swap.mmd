@@ -1,0 +1,26 @@
+---
+title: "Sequence: Approve Swap (UC-09)"
+---
+sequenceDiagram
+    actor Manager
+    participant SW as :SwapController
+    participant Repo as :SqliteRepository
+    participant RE as :RuleEngine
+    participant Sh as :Shift
+    participant Bus as :EventBus
+    Manager->>SW: decide(swapId, "approve")
+    SW->>Repo: swaps(), periodOfShift(shiftId)
+    Repo-->>SW: swap, the shift's week
+    SW->>+RE: validateAssignment(shift, claimedBy, period, repo)
+    RE-->>-SW: result
+    alt blocking violation now
+        SW-->>Manager: cannot approve, names the rule
+    else still passes
+        SW->>Sh: assign(claimedBy), status = published
+        Note over SW: swap.status = approved
+        SW->>Repo: transaction(saveShift, saveSwap)
+        SW->>Bus: emit("swap.decided", swap, shift)
+        Bus->>Repo: addNotice(claimer), addNotice(poster)
+        Bus->>Repo: addAudit("Approved ... taking ...")
+        SW-->>Manager: ok
+    end

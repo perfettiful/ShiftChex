@@ -11,9 +11,10 @@ const fresh = () => new Repository(":memory:");
 describe("repository tests", () => {
   test("runs each migration once", () => {
     const db = open(":memory:");
-    assert.deepEqual(migrate(db), ["001_create_tables.sql", "002_add_indexes.sql"]);
+    assert.deepEqual(migrate(db), ["001_create_tables.sql", "002_add_indexes.sql", "003_add_login.sql",
+      "004_add_notice_date.sql", "005_keep_swap_history.sql"]);
     assert.deepEqual(migrate(db), []);
-    assert.equal(migrations(db).length, 2);
+    assert.equal(migrations(db).length, 5);
   });
 
   test("loads 17 employees, 8 roles and 7 cert types", () => {
@@ -25,11 +26,11 @@ describe("repository tests", () => {
 
   test("builds the whole week of shifts", () => {
     // 11 a day, plus door on fri and sat
-    assert.equal(fresh().currentPeriod().shifts.length, 79);
+    assert.equal(fresh().workingPeriod().shifts.length, 79);
   });
 
   test("starts with four empty shifts", () => {
-    const empty = fresh().currentPeriod().shifts.filter((s) => !s.isAssigned());
+    const empty = fresh().workingPeriod().shifts.filter((s) => !s.isAssigned());
     assert.equal(empty.length, 4);
   });
 
@@ -49,29 +50,34 @@ describe("repository tests", () => {
 
   test("reset puts everything back", () => {
     const repo = fresh();
-    const s = repo.currentPeriod().shifts[0];
+    const before = { audit: repo.audit(), notices: repo.notices(), swaps: repo.swaps() };
+    const s = repo.workingPeriod().shifts[0];
     s.assign("e11");
     repo.saveShift(s);
     repo.addAudit({ at: "2026-10-05", what: "test" });
+    repo.saveSwap({ ...repo.swaps().find((sw) => sw.id === "w3"), status: "withdrawn" });
+    repo.nextId("swap");
     repo.reset();
-    assert.equal(repo.currentPeriod().shifts[0].employeeId, "e10");
-    assert.equal(repo.audit().length, 0);
+    assert.equal(repo.workingPeriod().shifts[0].employeeId, "e10");
+    assert.deepEqual(repo.audit(), before.audit);
+    assert.deepEqual(repo.notices(), before.notices);
+    assert.deepEqual(repo.swaps(), before.swaps);
     assert.equal(repo.nextId("swap"), "swap-1");
   });
 
-  test("changes are still there after reopening the file", () => {
+  test("changes are still there after reopening the file", (t) => {
     const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "shiftchex-")), "test.db");
+    t.after(() => fs.rmSync(path.dirname(file), { recursive: true, force: true }));
     const repo = new Repository(file);
-    const s = repo.currentPeriod().shifts[0];
+    const s = repo.workingPeriod().shifts[0];
     s.assign("e11");
     repo.saveShift(s);
-    repo.addNotice({ id: repo.nextId("notice"), employeeId: "e11", text: "hi" });
+    repo.addNotice({ id: repo.nextId("notice"), employeeId: "e11", text: "hi", createdOn: "2026-10-05" });
     repo.close();
 
     const again = new Repository(file);
-    assert.equal(again.currentPeriod().shifts[0].employeeId, "e11");
-    assert.deepEqual(again.notices(), [{ id: "notice-1", employeeId: "e11", text: "hi" }]);
+    assert.equal(again.workingPeriod().shifts[0].employeeId, "e11");
+    assert.deepEqual(again.notices().at(-1), { id: "notice-1", employeeId: "e11", text: "hi", createdOn: "2026-10-05" });
     again.close();
-    fs.rmSync(path.dirname(file), { recursive: true, force: true });
   });
 });

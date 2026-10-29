@@ -1,0 +1,14 @@
+---
+title: "SSD: Claim Posted Shift (UC-05)"
+---
+sequenceDiagram
+    actor Employee
+    participant System as :System
+    Employee->>System: viewSwapBoard()
+    System-->>Employee: posted shifts, each with its rule check
+    Employee->>System: claimShift(swapId)
+    alt the claimer passes every blocking rule
+        System-->>Employee: claimed, waiting on the manager
+    else a blocking rule fails
+        System-->>Employee: refused, names the rule and the numbers
+    end

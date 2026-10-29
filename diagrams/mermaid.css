@@ -1,0 +1,57 @@
+/* extra styling mermaid's theme variables can't reach. matches the old hand drawn svgs */
+
+/* association / message labels are small gray italics, like the originals */
+.edgeLabel, .edgeLabel p, .relationshipLabel, .messageText, .labelText {
+  font-style: italic;
+  color: #5a6472;
+}
+.messageText { fill: #1a1a1a !important; font-style: normal; }
+.edgeLabel { background: #ffffff !important; }
+
+/* class boxes: tinted header, white body */
+g.classGroup rect, .node.default > rect { stroke-width: 1.6px; }
+.classTitle, .nodeLabel.classTitle { font-weight: 700; }
+g.node.default .label-container { stroke-width: 1.6px; }
+
+/* er tables */
+.er.entityBox { stroke-width: 1.6px; }
+.er.entityLabel { font-weight: 700; }
+
+/* sequence diagrams */
+.actor { stroke-width: 1.6px; }
+line.actor-line { stroke-dasharray: 4 4; }
+.note { stroke-dasharray: 0; }
+.loopText, .loopText > tspan { font-style: italic; }
+
+/* use case ovals and the system boundary */
+.cluster rect { stroke-width: 1.6px; }
+.cluster-label .nodeLabel { font-weight: 700; }
+
+/* titles */
+.classDiagramTitleText, .flowchartTitleText, .erDiagramTitleText, .statediagramTitleText,
+text[class$="TitleText"] { font-size: 20px !important; font-weight: 700; fill: #1a1a1a !important; }
+
+/* label backgrounds plain white, multiplicities readable */
+.labelBkg, .edgeLabel .labelBkg, .edgeLabel rect { background-color: #ffffff !important; fill: #ffffff !important; opacity: 1 !important; }
+.edgeTerminals foreignObject { overflow: visible; }
+.edgeTerminals .edgeLabel, .edgeTerminals .edgeLabel p { font-size: 13px !important; font-style: normal !important; color: #1a1a1a !important; background: transparent !important; }
+
+/* domain model style: a class with no methods shows name + attributes only */
+g.node:has(> g.methods-group:empty) > g.divider:last-of-type { display: none; }
+
+/* state names were coming out the same color as the box */
+.statediagram-state .nodeLabel, .statediagram-state .nodeLabel p { color: #1a1a1a !important; }
+
+/* activity diagrams: the start node is a solid dot */
+g.node[id*="flowchart-start-"] circle, g.node[id*="flowchart-start-"] path { fill: #1a1a1a !important; stroke: #1a1a1a !important; }
+
+/* sequence diagram titles are the only bare <text> mermaid puts at y=-25. it centers them
+   2 x diagramMarginX (30) too far left, so this nudges them back to the middle */
+text:not([class])[y="-25"] { font-size: 20px !important; font-weight: 700; fill: #1a1a1a; text-anchor: middle; transform: translateX(60px); }
+
+/* stick figure: smaller white head, thinner lines, so it reads as a person and not a balloon */
+.actor-man line { stroke-width: 1.6px !important; }
+.actor-man circle { fill: #ffffff !important; stroke-width: 2.6px !important;
+  transform-box: fill-box; transform-origin: center; transform: translateY(6px) scale(0.6); }
+
+

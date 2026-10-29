@@ -1,18 +1,19 @@
 {
   "name": "shiftchex",
   "version": "1.0.0",
-  "description": "ShiftChex prototype. ICS 370 Group 3.",
+  "description": "ShiftChex, a rule checker for restaurant staff schedules.",
   "main": "src/ui/server.js",
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node src/ui/server.js",
+    "start": "node src/ui/server.js --open",
     "test": "node --test",
     "db:migrate": "node scripts/db.js migrate",
     "db:seed": "node scripts/db.js seed",
     "db:reset": "node scripts/db.js reset",
-    "db:status": "node scripts/db.js status"
+    "db:status": "node scripts/db.js status",
+    "diagrams": "node scripts/diagrams.js"
   },
   "license": "MIT"
 }

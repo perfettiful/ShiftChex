@@ -1,0 +1,53 @@
+---
+title: "GoF: Strategy and Composite (the rule classes)"
+config:
+  layout: elk
+---
+%% Strategy: every rule answers check(ctx) its own way.
+%% Composite: a CompositeRule is also a Rule, so a group is used like one rule.
+%% only four of the eleven concrete rules are drawn
+classDiagram
+    direction TB
+    class RuleEngine {
+        -root Rule
+        +validate(period, repo)
+        +validateAssignment(shift, employeeId, period, repo)
+    }
+    class RuleFactory {
+        +rulesFor()$ Rule
+    }
+    class Rule {
+        <<interface>>
+        +id
+        +title
+        +check(ctx) Violation[]
+    }
+    class CompositeRule {
+        -children Rule[]
+        +check(ctx) Violation[]
+    }
+    class AvailabilityRule {
+        R1
+        +check(ctx) Violation[]
+    }
+    class RestRule {
+        R3
+        +check(ctx) Violation[]
+    }
+    class CertificationRule {
+        R10
+        +check(ctx) Violation[]
+    }
+    class OnSiteCertRule {
+        R11
+        +check(ctx) Violation[]
+    }
+
+    RuleEngine --> "1" Rule : root
+    RuleFactory ..> CompositeRule : «create»
+    Rule <|.. CompositeRule
+    Rule <|.. AvailabilityRule
+    Rule <|.. RestRule
+    Rule <|.. CertificationRule
+    Rule <|.. OnSiteCertRule
+    CompositeRule o--> "1..*" Rule : children

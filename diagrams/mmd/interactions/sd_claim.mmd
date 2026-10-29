@@ -1,0 +1,24 @@
+---
+title: "Sequence: Claim Posted Shift (UC-05)"
+---
+sequenceDiagram
+    actor Employee
+    participant SW as :SwapController
+    participant Repo as :SqliteRepository
+    participant RE as :RuleEngine
+    participant SR as :SwapRequest
+    participant Sh as :Shift
+    Employee->>SW: claim(swapId, employeeId)
+    SW->>Repo: swaps(), periodOfShift(shiftId)
+    Repo-->>SW: swap, the shift's week
+    SW->>+RE: validateAssignment(shift, employeeId, period, repo)
+    RE-->>-SW: result
+    alt no blocking violation
+        SW->>SR: claimedBy = employeeId, status = claimed
+        SW->>Sh: status = claimed
+        SW->>Repo: transaction(saveSwap, saveShift)
+        SW-->>Employee: claimed, waiting on the manager
+    else blocking violation
+        SW-->>Employee: refused with the failing rule
+    end
+    Note over SW,Sh: the check runs first,<br/>so a refused claim never writes anything

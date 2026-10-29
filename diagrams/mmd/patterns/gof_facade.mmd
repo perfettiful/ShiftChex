@@ -1,0 +1,37 @@
+---
+title: "GoF: Facade (RuleEngine)"
+---
+%% two methods out front. behind them the engine gathers the lookups and walks
+%% the rule tree. for one assignment it checks the week before and after the
+%% change and keeps only what's new for that person or the week as a whole
+classDiagram
+    direction LR
+    class ScheduleController
+    class SwapController
+    class RuleEngine {
+        <<Facade>>
+        +validate(period, repo) Result
+        +validateAssignment(shift, employeeId, period, repo) Result
+    }
+    namespace BehindTheFacade {
+        class Context {
+            employeeById
+            roleById
+            certTypeById
+            settings
+            today
+        }
+        class CompositeRule {
+            +check(ctx) Violation[]
+        }
+        class Violation {
+            +severity
+            +blocks() boolean
+        }
+    }
+
+    ScheduleController --> RuleEngine : validate
+    SwapController --> RuleEngine : validateAssignment
+    RuleEngine ..> Context : builds
+    RuleEngine --> CompositeRule : check(ctx)
+    CompositeRule ..> Violation : returns

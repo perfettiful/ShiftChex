@@ -1,8 +1,10 @@
 // employee: UC-01 declare weekly availability
 import { app, me } from "../state.js";
 import { el } from "../dom.js";
-import { dayLabel, WEEK, availabilityText } from "../format.js";
+import { icon } from "../icons.js";
+import { shortDate, WEEK, availabilityText } from "../format.js";
 import { act } from "../api.js";
+import { pageHead } from "../layout.js";
 
 export function availabilityView() {
   const { S } = app;
@@ -12,9 +14,9 @@ export function availabilityView() {
   // a checkbox and two time boxes per day. unticked greys out the times
   const rows = WEEK.map(([weekday, name]) => {
     const cur = byDay.get(weekday);
-    const on = el("input", { type: "checkbox", checked: !!cur || null });
-    const from = el("input", { type: "time", value: cur ? cur.startTime : "09:00" });
-    const to = el("input", { type: "time", value: cur ? cur.endTime : "17:00" });
+    const on = el("input", { type: "checkbox", checked: !!cur || null, "aria-label": `Available ${name}` });
+    const from = el("input", { type: "time", value: cur ? cur.startTime : "09:00", "aria-label": `${name} from` });
+    const to = el("input", { type: "time", value: cur ? cur.endTime : "17:00", "aria-label": `${name} to` });
     const sync = () => { from.disabled = to.disabled = !on.checked; };
     on.addEventListener("change", sync);
     sync();
@@ -29,23 +31,22 @@ export function availabilityView() {
     const slots = rows.filter((r) => r.on.checked)
       .map((r) => ({ weekday: r.weekday, startTime: r.from.value, endTime: r.to.value }));
     act("/api/availability", { effectiveFrom: starting.value, slots },
-      `Saved. Shifts from ${starting.value} on get checked against this.`, { keep: true });
+      `Saved. Shifts from ${shortDate(starting.value)} on get checked against this.`, { keep: true });
   };
 
   return [
-    el("div", { class: "subbar" },
-      el("h1", {}, "My availability"),
-      el("span", { class: "muted" }, `Week of ${dayLabel(S.period.startDate)}: ${availabilityText(me().availability)}`)),
-    el("div", { class: "cards" }, el("div", { class: "card form" },
+    pageHead({ title: "My availability", meta: `Right now: ${availabilityText(me().availability)}` }),
+    el("div", { class: "card form" },
       el("p", { class: "muted" }, "Tick the days you can work and the hours you can do. " +
-        "Days left unticked count as not available. The manager can't schedule you outside this."),
+        "Days left unticked count as not available, and the manager can't schedule you outside this " +
+        "unless you've agreed to it."),
       el("table", { class: "avail" },
         el("thead", {}, el("tr", {}, el("th", {}, "Day"), el("th", {}, "From"), el("th", {}, "To"))),
         el("tbody", {}, rows.map((r) => r.row))),
-      el("div", { class: "row" },
+      el("div", { class: "form-row" },
         el("label", { class: "field" }, "Starting", starting),
-        el("button", { onclick: save }, "Save availability")),
+        el("button", { onclick: save }, icon("save"), "Save availability")),
       latest.effectiveFrom > S.today
-        ? el("p", { class: "muted" }, `What you last sent starts ${latest.effectiveFrom}.`) : null)),
+        ? el("p", { class: "hint" }, `What you last sent starts ${shortDate(latest.effectiveFrom)}.`) : null),
   ];
 }

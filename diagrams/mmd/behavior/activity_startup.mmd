@@ -1,0 +1,21 @@
+---
+title: "Activity: Startup, Migrations and Seeding (new in Elab 2)"
+config:
+  layout: elk
+  flowchart:
+    wrappingWidth: 320
+---
+flowchart TB
+    start@{ shape: sm-circ } --> A1["npm start"]
+    A1 --> A2["Open data/shiftchex.db, creating it if missing"]
+    A2 --> A3["Create schema_migrations if missing"]
+    A3 --> D1{"New migration<br/>file?"}
+    D1 -- yes --> A4["Run the next file in a transaction"]
+    A4 --> D2{"Worked?"}
+    D2 -- yes --> A5["Record it in schema_migrations"] --> D1
+    D2 -- no --> A6["Roll back, stop, name the file"] --> stop1@{ shape: fr-circ }
+    D1 -- no --> D3{"Database<br/>empty?"}
+    D3 -- yes --> A7["Seed the demo week from seed.js"] --> A8
+    D3 -- no --> A8["Serve on localhost:3000"]
+    A8 --> stop2@{ shape: fr-circ }
+

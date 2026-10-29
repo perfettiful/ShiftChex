@@ -1,0 +1,10 @@
+.git
+.github
+.do
+data
+diagrams
+docs
+scripts
+tests
+node_modules
+*.md

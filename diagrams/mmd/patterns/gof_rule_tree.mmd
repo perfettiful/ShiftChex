@@ -1,0 +1,31 @@
+---
+title: "GoF: Factory (the rule tree RuleFactory builds)"
+config:
+  layout: elk
+---
+%% the actual objects at runtime. the engine only holds the root and never
+%% learns it's a tree. adding a rule = one new class + one line in the factory
+flowchart LR
+    RF["RuleFactory.rulesFor()"]:::factory
+    RE[":RuleEngine"]
+    ALL[":CompositeRule<br/><b>all</b>"]
+    BLK[":CompositeRule<br/><b>blocking</b>"]
+    WRN[":CompositeRule<br/><b>warnings</b>"]
+
+    RF -. "builds" .-> ALL
+    RE -- "root" --> ALL
+    ALL --> BLK
+    ALL --> WRN
+    BLK --> R1["R1 Availability"]
+    BLK --> R2["R2 Approved time off"]
+    BLK --> R3["R3 Minimum rest"]
+    BLK --> R4["R4 Under 18"]
+    BLK --> R5["R5 Role qualification"]
+    BLK --> R10["R10 Required certs"]
+    BLK --> R6["R6 Coverage"]
+    BLK --> R11["R11 On-site certs"]
+    WRN --> R7["R7 Overtime"]
+    WRN --> R8["R8 Labor budget"]
+    WRN --> R9["R9 Advance notice"]
+
+    classDef factory fill:#ffffff,stroke:#3a3a3a,stroke-dasharray:5 4
