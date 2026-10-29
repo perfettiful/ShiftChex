@@ -48,7 +48,7 @@ for (const file of files) {
   const run = spawnSync("npx", ["-y", CLI, "-q", "-i", path.join(SRC, file), "-o", out, ...args],
     { env, encoding: "utf8", shell: process.platform === "win32" });
   if (run.status === 0) {
-    trim(out);  // same white margin on every side
+    trim(out);
     console.log(`  ${file} -> images/${rel}`);
   } else {
     failed++;

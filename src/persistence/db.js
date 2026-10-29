@@ -14,6 +14,8 @@ function open(file = DEFAULT_FILE) {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec("PRAGMA foreign_keys = ON");
+  // if something else has the file locked (sqlite3, a db viewer), wait for it instead of failing
+  db.exec("PRAGMA busy_timeout = 2000");
   return db;
 }
 

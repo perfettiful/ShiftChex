@@ -19,10 +19,8 @@ npm run diagrams              # render everything
 npm run diagrams -- erd patterns/   # only paths that contain erd or patterns/
 ```
 
-It runs mermaid-cli through `npx`, so nothing gets added to `package.json`. If
-Chrome is installed it uses that, otherwise the first run downloads a copy.
-Every diagram shares one look, set in `mermaid.config.json` (colors, fonts,
-spacing) and `mermaid.css` (the bits the config can't reach). Change those
+It runs mermaid-cli through `npx`, using Chrome if it's installed. Every diagram
+shares the look set in `mermaid.config.json` and `mermaid.css`, so change those
 instead of styling diagrams one at a time.
 
 Layout tips if you add one:
@@ -54,7 +52,7 @@ Marked **new** if it was added in Elaboration 2.
 | Diagram | Source |
 |---|---|
 | Domain model, updated with CertType, Certificate and Notice | [domain](mmd/models/domain.mmd) |
-| **new** Data model (ER), every table from the migrations | [erd](mmd/models/erd.mmd) |
+| **new** Data model (ER), every table from migrations 001 to 004 | [erd](mmd/models/erd.mmd) |
 
 ![Domain model](images/models/domain.png)
 ![Data model](images/models/erd.png)
@@ -79,6 +77,7 @@ Marked **new** if it was added in Elaboration 2.
 | **new** Sequence: Approve swap (UC-09) | [sd_approve_swap](mmd/interactions/sd_approve_swap.mmd) |
 | **new** Sequence: Publish with Observer (UC-08) | [sd_publish](mmd/interactions/sd_publish.mmd) |
 | **new** Sequence: Override (UC-12) | [sd_override](mmd/interactions/sd_override.mmd) |
+| **new** Sequence: Coverage and labor report (UC-11) | [sd_report](mmd/interactions/sd_report.mmd) |
 | **new** Communication: Claim posted shift | [comm_claim](mmd/interactions/comm_claim.mmd) |
 
 ## patterns/
@@ -87,7 +86,7 @@ Marked **new** if it was added in Elaboration 2.
 |---|---|---|
 | Strategy + Composite | the rule classes | [gof_rules.mmd](mmd/patterns/gof_rules.mmd) |
 | **new** Factory | the rule tree `RuleFactory` builds | [gof_rule_tree.mmd](mmd/patterns/gof_rule_tree.mmd) |
-| **new** Observer | `EventBus`, notices and the audit log | [gof_observer.mmd](mmd/patterns/gof_observer.mmd) |
+| **new** Observer | `EventBus` and `observers.js`, notices and the audit log | [gof_observer.mmd](mmd/patterns/gof_observer.mmd) |
 | **new** Adapter | `SqliteRepository` | [gof_adapter.mmd](mmd/patterns/gof_adapter.mmd) |
 | **new** Facade | `RuleEngine` | [gof_facade.mmd](mmd/patterns/gof_facade.mmd) |
 

@@ -6,18 +6,12 @@ rules (are they available, are they 17, is their alcohol cert expired, etc).
 You can't publish until nothing is blocking. Employees get their own screens
 for their shifts, availability, time off and swapping shifts.
 
-This prototype has the use cases from Elaboration 1 and 2. All the people and
-data in it are made up.
+All twelve use cases are in. All the people and data in it are made up.
 
 ## What you need
 
-Just Node, version 22.13 or newer. We don't use any npm packages, so there's
-no `npm install`. SQLite comes built into Node now so that's covered too. It
-runs on Mac and Windows.
-
-```
-node --version
-```
+Node 22.13 or newer. There are no npm packages, so there's no `npm install`,
+and SQLite is built into Node. Runs on Mac and Windows.
 
 ## Setup
 
@@ -28,36 +22,46 @@ git update-index --skip-worktree data/shiftchex.db
 npm start
 ```
 
-Then go to http://localhost:3000. Ctrl+C stops the server.
+That opens the landing page at http://localhost:3000, and "Try the demo" goes
+to the app. Ctrl+C stops it. Use `node src/ui/server.js` if you don't want a new
+tab every time.
 
-About that `git update-index` line. The database file is committed so we all
-start with the same demo data, but it changes whenever you click around in the
-app and you don't want to commit that. Running the line once tells git to stop
-tracking your local changes to it. The file is in `.gitignore` too, but that
-doesn't do anything for a file that was already committed.
+Each screen has its own address: `/login`, then `/schedule`, `/approvals`,
+`/report` and `/people` for the manager, and `/my-schedule`, `/availability`,
+`/time-off` and `/swap-board` for employees. The weekly screens keep the week in
+the address too, like `/report?week=2026-11-23`.
+
+The database file is committed so everyone starts with the same demo data. The
+`update-index` line stops git from picking up your local changes to it. If the
+app looks like it's missing data after a pull, hit Reset demo or run
+`npm run db:reset`.
 
 ## Database
 
-Everything is stored in SQLite in `data/shiftchex.db`. On startup the server
-runs any migrations that haven't run yet. If the database is empty it fills it
-with the demo week from `src/persistence/seed.js`.
-
-The app doesn't keep any data in memory between requests. Every page load reads
-from the database. So if you change something in the file directly (the SQLite
-Viewer extension in VS Code works, so does `sqlite3`) you'll see it as soon as
-you refresh.
+Everything is in SQLite at `data/shiftchex.db`. On startup the server runs any
+migrations that haven't run yet, and fills an empty database with the demo data
+from `src/persistence/seed.js`. Nothing is kept in memory between requests, so
+changes made straight to the file (SQLite Viewer in VS Code, `sqlite3`) show up
+on the next refresh.
 
 ```
 npm run db:migrate   # run migrations that haven't run yet
-npm run db:seed      # reset to the demo week, keeps the tables
+npm run db:seed      # reset to the demo data, keeps the tables
 npm run db:reset     # delete the file and build it again
-npm run db:status    # shows which migrations ran and some row counts
+npm run db:status    # which migrations ran, and row counts
 ```
 
-Migrations are the numbered `.sql` files in `src/persistence/migrations/`, and
-each one only runs once. If you need to change the schema add a new one, like
-`003_something.sql`. Don't edit one that already ran. You can also point the
-app at a different file with `SHIFTCHEX_DB`.
+Migrations are the numbered `.sql` files in `src/persistence/migrations/`. Each
+runs once. To change the schema add a new one, don't edit one that already ran.
+`SHIFTCHEX_DB` points the app at a different file.
+
+| Migration | What it does |
+|---|---|
+| `001_create_tables.sql` | one table per domain class, plus settings and the audit log |
+| `002_add_indexes.sql` | indexes for the rules and the swap board |
+| `003_add_login.sql` | accounts and sessions for signing in |
+| `004_add_notice_date.sql` | notices get a date |
+| `005_keep_swap_history.sql` | withdrawn and cancelled swaps stay on record |
 
 ## Tests
 
@@ -65,115 +69,148 @@ app at a different file with `SHIFTCHEX_DB`.
 npm test
 ```
 
-There are 82 tests in `tests/` and they use Node's built in test runner. Every
-test gets its own in memory database so they never mess with
-`data/shiftchex.db`.
+173 tests using Node's built in test runner. They use in memory databases (a
+few use a temp file), so they never touch `data/shiftchex.db`.
+
+| File | Covers |
+|---|---|
+| `rules.test.js` | each rule on its own, edges included |
+| `engine.test.js` | the rule tree, the factory and the engine |
+| `contracts.test.js` | the postconditions from our operation contracts |
+| `availability.test.js` | UC-01 and UC-02 |
+| `override.test.js` | UC-12 |
+| `report.test.js` | UC-11 |
+| `weeks.test.js` | the demo weeks and the swap lifecycle |
+| `repository.test.js` | migrations, reads, writes, reset |
+| `session.test.js` | signing in, permissions, the API end to end |
+| `server.test.js` | bad requests, file serving, cookies, a locked database |
+
+## Deploying
+
+`.github/workflows/ci-cd.yml` runs the tests on every push. On `main` it also
+builds the Docker image, pushes it to the DigitalOcean container registry (and
+makes a free one if there isn't one), then creates or updates the App Platform
+app from `.do/app.yaml`. It's live at https://shiftchex.work, whose DNS is at
+Cloudflare (CNAME records to the app's `ondigitalocean.app` address, DNS only).
+
+It needs one repo secret, a DigitalOcean API token with access to apps and the
+container registry:
+
+```
+gh secret set DIGITALOCEAN_ACCESS_TOKEN --repo perfettiful/ShiftChex
+```
+
+Without it, the tests still run and the deploy is skipped. The app costs about
+$5 a month. The database lives in the container, so every deploy or restart
+starts from fresh demo data. To roll back, run the workflow by hand with an
+older image tag (`gh workflow run ci-cd.yml -f image_tag=sha-abc1234`).
+
+To run the image locally: `docker build -t shiftchex . && docker run --rm -p 8080:8080 shiftchex`
 
 ## Demo
 
-All the dates are fixed so the demo goes the same way every time. "Today" in
-the app is 10/5/2026 and the schedule is the week of 10/12. Hit Reset demo in
-the top right before you start (and whenever you want the original data back).
+The dates are fixed so the demo goes the same way every time. "Today" is Monday
+10/5/2026.
 
-To sign in you just pick a name from the "Signed in as" dropdown. No
-passwords. The server still checks who you are on every request though, so an
-employee can't publish or approve anything, and an employee can't do something
-as someone else by messing with the request.
+- **Week of 10/5** is published, and people are already swapping shifts on it.
+- **Week of 10/12** is the draft the manager is building. Most of the demo uses it.
+- **10/19 through the week of 12/28** have the usual roster filled in. Closed on
+  Thanksgiving, Christmas Day and New Year's Day.
 
-### 1. Rule checks
+A few cert renewals are already booked (Grace 10/14, Lena 10/17, Jordan 10/19
+and 11/16). A cert only counts from the day it's issued, so Lena can't bartend
+on 10/16.
 
-Sign in as R. Chen (Manager). The rule check panel on the right updates every
-time you change someone in the grid.
+Sign in with the "Demo account" dropdown, which fills in the username and
+password (`shiftchex` for everyone). Usernames look like `dana.park`, and the
+manager is `r.chen`. The server checks the session cookie on every request, so
+an employee can't publish, approve, or act as someone else. The manager has a
+Reset demo button in the top right, use it before you start. The arrows and
+menu at the top of the Schedule, Report and People tabs switch weeks.
 
-1. Put Riya Iyer on a Server 11am shift. She only works evenings so R1 blocks it.
-2. Put Marcus Okoye on Thursday's Bartender shift. His alcohol cert expired
-   9/30, and renewals don't get a grace period, so R10 blocks him.
-3. Put Lena Haas on Thursday's Bartender shift instead. That works. Now try her
-   on Friday. Her alcohol cert runs out 10/15, and R10 looks at the shift date
-   instead of today, so Friday gets blocked.
-4. Put Kai Obi on Friday's Server 5pm to 11pm shift. He's 17, so R4 blocks it
-   because of curfew, and R10 also says servers need an alcohol cert. Friday's
-   Host shift blocks him too since that shift checks IDs.
-5. Put Priya Shah on any Dishwasher shift. She was hired 8/20 and never got her
-   Food Handler Card. She had 30 days and that ran out 9/19.
-6. Jordan Lee is already scheduled. Jordan's a new hire who's still inside the
-   grace windows, so R10 only warns.
-7. Take Dana Park off Tuesday lunch and put Jordan there. Mia is leading that
-   night and doesn't have First Aid, so between 4pm and 5pm nobody on site has
-   it. R11 blocks it.
-8. Try publishing. You can't, the button stays disabled while anything blocks.
+### 1. Rule checks (UC-06, UC-07)
 
-### 2. Publishing
+Sign in as R. Chen. The Schedule tab opens on next week, and the rule check
+panel updates every time you change someone in the grid.
 
-Hit Reset demo first. Anything left over from part 1 is still blocking and you
-won't be able to publish. Same goes for parts 4 and 5, so don't do those on
-this week before you publish (or reset after).
+1. Put Riya Iyer on a Server 11am shift. She only works evenings, so R1 blocks it.
+2. Put Marcus Okoye on Thursday's Bartender shift. His alcohol cert expired 9/30
+   and renewals get no grace period, so R10 blocks him.
+3. Put Lena Haas on Thursday's Bartender shift instead. That works. Try her on
+   Friday: her card runs out 10/15 and the new one starts 10/17, and R10 checks
+   the shift date, not today.
+4. Put Kai Obi on Friday's Server 5pm shift. He's 17, so R4 blocks it for
+   curfew, and R10 says servers need an alcohol cert.
+5. Put Priya Shah on any Dishwasher shift. Her 30 days to get a Food Handler
+   Card ran out 9/19.
+6. Jordan Lee is a new hire still inside his grace windows, so R10 only warns.
+7. Take Dana Park off Tuesday lunch and put Jordan there. Nobody on site has
+   First Aid from 4pm to 5pm, so R11 blocks it.
+8. Put Omar Farah on Monday's 8am lead shift. R3 blocks it, partly because he
+   closes Sunday night on this week's schedule.
+9. Try publishing. The button stays disabled while anything blocks.
 
-The fresh week starts with 5 blocking problems. 4 of them are empty cells, and
-the 5th is that nobody on Sunday night has a Food Manager cert. Fill the cells
-in like this:
+### 2. Override a violation (UC-12)
+
+1. Put Ben Cole on Sunday's empty Cook shift. He doesn't work Sundays, so R1
+   blocks it and an Override link shows up under the cell.
+2. Click Override. It won't go through without a reason. With one, R1 turns
+   into a warning that shows the reason.
+3. Only R1 can be overridden. Override Riya on Tuesday lunch and R3 still blocks,
+   since she's on Tuesday dinner too.
+4. The Report tab lists every override and the activity log records it. This
+   week already has one, Ben covering Sunday 10/11.
+
+### 3. Publishing (UC-08)
+
+Hit Reset demo first. Next week starts with 5 blocking problems, 4 empty cells
+and nobody with a Food Manager cert on Sunday night. Fill them in:
 
 - Sam Ruiz on Tuesday Server 11am
 - Lena Haas on Thursday Bartender
 - Ana Diaz on Sunday Cook
-- Mia Torres on Sunday Manager / shift lead 4pm
+- Mia Torres on Sunday lead 4pm (she has the Food Manager cert)
 
-Mia has the Food Manager cert, so that fixes Sunday night too. Blocking goes to
-0 and you can publish.
+Blocking goes to 0 and you can publish. The 4 warnings left don't stop it: R10
+for Jordan, R7 for Mia (42 hours) and Ana (48), and R9 because the week is 7
+days out instead of 14. Everyone on the week gets a notice, and it shows up on
+their My schedule.
 
-There will still be 4 warnings and that's fine, warnings don't stop you from
-publishing:
+### 4. Swaps (UC-04, UC-05, UC-09)
 
-- R10, Jordan Lee is a new hire who still needs some certs
-- R7, Mia is at 42 hours and Ana is at 48 (the limit is 40)
-- R9, the week starts in 7 days and we want 14 days notice
+These are on this week, which is already published.
 
-If anyone asks about Ana's 48 hours, overtime isn't illegal, so R7 just warns
-and leaves it up to the manager.
+1. As Riya, open the Swap board. She can't claim Dana's Thursday lunch, and it
+   says why.
+2. As Sam, claim Dana's Thursday lunch. Tom's Friday bar shift is there too, but
+   Sam's already on Friday dinner.
+3. As Lena, Tom's Friday bar shift is open to her. Marcus's lapsed cert stops him.
+4. As the manager, open Approvals. Marcus taking Luis's Wednesday dish shift
+   passes. Ben's claim on Jordan's Wednesday lunch passed when he made it, but
+   his 10/7 day off was approved since, so the second check fails and Approve is
+   greyed out.
+5. As Dana, Take it back pulls her Thursday lunch off the board.
 
-It also still works if you approve Ana's time off request (10/17) first. Ana
-isn't working that Saturday so it doesn't block anything.
+Unpublishing this week cancels its open swaps, and everyone involved gets a notice.
 
-Once it's published everyone on the schedule gets a notice. Sign in as Dana
-Park and it's at the top of My schedule.
+### 5. Availability (UC-01)
 
-### 3. Swaps
+As Tom, untick Tuesday in Availability and save. As the manager, R1 now blocks
+his Tuesday dinners. New availability only counts from its Starting date, so
+starting it 10/12 leaves this week alone.
 
-You need the published week from part 2 for this.
+### 6. Time off (UC-02, UC-10)
 
-1. Sign in as Dana Park and post Monday's Server shift for swap (it's on My
-   schedule).
-2. Sign in as Riya Iyer and open the Swap board. The shift shows up but she
-   can't claim it, and it tells her why. It's a lunch shift.
-3. Sign in as Tom Nguyen and claim it.
-4. Sign in as the manager and go to Approvals. The rules already ran on it. If
-   they'd failed, Approve would be greyed out. Approve it and Tom gets the
-   shift.
+1. As Tom, ask for 10/13 to 10/14. Pending requests can be cancelled.
+2. As the manager, it's in Approvals. Each request lists the shifts it lands on.
+3. Approve it, and R2 blocks his Tuesday and Wednesday shifts. Tom gets a notice.
 
-### 4. Availability (UC-01)
+### 7. Coverage and labor report (UC-11)
 
-Hit Reset demo so the week is back in draft.
-
-1. Sign in as Tom Nguyen and open Availability.
-2. Untick Tuesday and save.
-3. Sign in as the manager. R1 is now blocking Tom's Tuesday evening shift.
-
-The Starting date matters. New availability only counts from that day forward,
-anything before it still gets checked against the old availability.
-
-### 5. Time off (UC-02 and UC-10)
-
-1. Sign in as Tom Nguyen, open Time off and ask for 10/13 to 10/14.
-2. Sign in as the manager. It's in Approvals, under Ana's request that was
-   already there. Pending requests don't block anything.
-3. Approve it. Now R2 blocks Tom's Tuesday and Wednesday shifts.
-4. Sign back in as Tom and the request says approved.
-
-### People tab
-
-The manager's People tab has everyone's roles, pay, availability and certs.
-Green means fine. Amber means a new hire still in their window, or a cert that
-runs out this week. Red means expired or missing.
+The Report tab shows, for any week: open shifts by day, labor against the
+budget by day and role, everyone's hours (over 40 red, 36 and up amber),
+certs that are a problem or come due in the next 30 days, overrides, and the
+activity log. Print gives you just the report.
 
 ## Use cases
 
@@ -184,107 +221,86 @@ runs out this week. Red means expired or missing.
 | UC-03 View my schedule | done |
 | UC-04 Post shift for swap | done |
 | UC-05 Claim posted shift | done |
-| UC-06 Build draft schedule | done (you assign people to the week's shifts) |
+| UC-06 Build draft schedule | done |
 | UC-07 Validate schedule against rules | done, all 11 rules |
 | UC-08 Publish schedule | done |
 | UC-09 Approve or deny swap | done |
 | UC-10 Approve or deny time off | done |
-| UC-11 Coverage and labor report | Elaboration 3 |
-| UC-12 Override a violation | Elaboration 3 |
+| UC-11 Coverage and labor report | done |
+| UC-12 Override a violation | done |
 
 ## Code layout
 
-The folders in `src/` match the four packages in our architecture doc, and
-dependencies only point down. `ui` uses `application`. `application` and
-`persistence` both use `domain`. `domain` doesn't import anything.
+The folders in `src/` are the four packages from our architecture doc, and
+dependencies only point down: `ui` uses `application`, which uses `domain`, and
+`persistence` uses `domain`. The repository is created once, in
+`application/wiring.js`, and the `ui` only calls controllers.
 
 ```
 src/
-  ui/
-    server.js      API routes
-    public/        index.html, app.css
-    public/js/     main.js starts things up, plus small shared helpers
-    public/js/views/  one file per screen (schedule, approvals, people, ...)
-  application/     controllers, rule engine, rule factory, event bus
-  domain/          domain classes
-  domain/rules/    Rule interface, CompositeRule and the 11 rules
-  persistence/     SQLite repository, migrations, demo data
-scripts/db.js      the db:* commands
-data/              shiftchex.db
-tests/             the tests
+  ui/               server.js (API and page routes), public/ (landing page and the app)
+  application/      controllers, rule engine, rule factory, event bus, observers
+  domain/           domain classes, date formats, notice and audit wording
+  domain/rules/     Rule, CompositeRule and the 11 rules
+  persistence/      SQLite repository, migrations, demo data
+scripts/            db:* commands and the diagram renderer
+data/               shiftchex.db
+tests/              the tests
 ```
 
-The `ui` code never goes to the database itself, it only calls controllers.
-The repository gets created in one place, `application/wiring.js`, which hands
-it to the controllers.
+`app.css` keeps colors, type, spacing and page widths as variables at the top.
+Pages are centered (1120px, 1440px for the grid, 780px for single column
+screens), and the layout steps down at 1360px, 900px and 640px. Icons are a
+small set from Lucide (ISC license) kept in `public/js/icons.js`.
 
 ### Diagrams
 
-The Mermaid sources are in folders under `diagrams/mmd/` (requirements, models,
-design, interactions, patterns, behavior) and the rendered pictures are in the
-same folders under `diagrams/images/`. [diagrams/README.md](diagrams/README.md) lists all of them
-and shows the main ones. After changing a `.mmd` file, run
-
-```
-npm run diagrams
-```
-
-to regenerate the images. They all share one theme (`diagrams/mermaid.config.json`
-and `diagrams/mermaid.css`) so they match.
+The Mermaid sources are under `diagrams/mmd/` and the pictures under
+`diagrams/images/`, in matching folders. [diagrams/README.md](diagrams/README.md)
+lists them. After changing a `.mmd` file run `npm run diagrams`.
 
 ### Patterns
 
 | Pattern | Where |
 |---|---|
-| Strategy | `domain/rules/Rule.js` and the rules next to it |
+| Strategy | `domain/rules/Rule.js` and the rules |
 | Composite | `domain/rules/CompositeRule.js` |
 | Factory | `application/RuleFactory.js` |
-| Observer | `application/events.js`, hooked up in `application/wiring.js` |
-| Adapter | `persistence/repository.js`, turns SQLite rows into domain objects and back |
-| Facade | `application/RuleEngine.js`, two methods in front of the whole rule tree |
-| Pure Fabrication | `application/RuleEngine.js` |
-| Controller | `ScheduleController.js`, `SwapController.js`, `AvailabilityController.js`, `SessionController.js` in `application/` |
-| Information Expert | `Employee.isAvailableOn` and `Employee.certStatus` in `domain/index.js` |
+| Observer | `application/events.js` and `application/observers.js` |
+| Adapter | `persistence/repository.js` |
+| Facade, Pure Fabrication | `application/RuleEngine.js` |
+| Controller | the five controllers in `application/` |
+| High Cohesion | swaps and the report have their own controllers |
+| Information Expert | `Employee` (availability, certs) and `SchedulePeriod` (labor cost) |
 
 ### Rules
 
-- R1 availability
-- R2 approved time off
-- R3 minimum rest
-- R4 under 18
-- R5 role qualification
-- R6 coverage
-- R7 overtime
-- R8 labour budget
-- R9 advance notice
-- R10 required certifications
-- R11 on-site certifications
+R1 availability, R2 approved time off, R3 minimum rest, R4 under 18, R5 role
+qualification, R6 coverage, R7 overtime, R8 labor budget, R9 advance notice,
+R10 required certifications, R11 on-site certifications.
 
-R1 through R6, R10 and R11 stop you from publishing. R7 to R9 just warn. R10
-also warns about new hires who are still in their grace window. The limits
-(hours of rest, curfew, overtime and so on) are settings in the database, not
-hardcoded, so one restaurant could use 10 hours of rest and another could use 12.
-
-### Certifications
-
-The full list of which certs each role needs, how long new hires get and how
-often each one renews is in [docs/certifications.md](docs/certifications.md).
-R10 checks each person against it. R11 checks the restaurant as a whole, since
-someone with First Aid and someone with a Food Manager cert have to be on site
-the entire time it's open.
+R7 to R9 only warn, the rest block publishing. R1 is the only one a manager can
+override. Thresholds (rest hours, curfew, overtime) are settings in the
+database. Which certs each role needs is in
+[docs/certifications.md](docs/certifications.md).
 
 ## Notes
 
-- The rule checking all happens on the server. The browser only shows what
-  comes back, so you can't get around a rule by editing a request.
-- Swap claims get checked twice. Once when the employee claims it and again
-  when the manager approves, because the schedule could change in between. We
-  found that one while building it, it's in the Elaboration 2 writeup.
+- All rule checking happens on the server, so editing a request can't get
+  around a rule.
+- Swap claims are checked twice, when claimed and again when approved, since the
+  schedule can change in between. Ben's claim in the demo shows it.
+- A claim or override is checked against the week before and after the change,
+  and only what's new for that person or the whole week counts against it.
+- R3 also checks the published weeks either side, so closing Sunday and opening
+  Monday is caught. Rest uses wall clock hours, so the time zone doesn't matter.
+- A published week can't be edited, only unpublished. Every change is saved
+  together with the notices and audit entries it causes.
+- Employees only get published weeks and their own details. Sign ins last a week.
 
 ## Out of scope
 
-- Real logins and passwords. You just pick who you are. The manager isn't on
-  the schedule so there's no employee row for them, their account is set up in
-  `SessionController` instead.
+- Registering accounts or changing passwords. Demo accounts come with the demo data.
+- Editing a published week in place
 - Auto-generating schedules
 - Payroll, a time clock, texts or emails

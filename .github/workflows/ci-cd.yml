@@ -1,0 +1,121 @@
+# Tests on every push. On main, also build the image, push it to DigitalOcean's registry
+# and deploy it to App Platform (.do/app.yaml). Deploying needs the DIGITALOCEAN_ACCESS_TOKEN
+# secret. To roll back, run this by hand with an older image tag, like sha-abc1234.
+name: CI/CD
+
+on:
+  push:
+    paths-ignore: ["**.md", "diagrams/**", "docs/**"]
+  pull_request:
+    paths-ignore: ["**.md", "diagrams/**", "docs/**"]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Redeploy an image that's already in the registry instead of building (like sha-abc1234)"
+        required: false
+        default: ""
+
+# one run per branch at a time, and never cancel a deploy halfway
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash # turns on pipefail
+
+jobs:
+  test:
+    name: Test
+    if: ${{ !inputs.image_tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # node:sqlite needs 22.13 or newer
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Tests
+        run: npm test
+
+  deploy:
+    name: Deploy to DigitalOcean
+    needs: test
+    # also runs when test was skipped for a rollback, but never after a failure
+    if: ${{ !cancelled() && !failure() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      HAS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
+    steps:
+      - name: Check for the DigitalOcean token
+        if: env.HAS_TOKEN != 'true'
+        run: echo "::notice::DIGITALOCEAN_ACCESS_TOKEN isn't set, so nothing was deployed. See Deploying in the README."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_TOKEN == 'true'
+
+      - uses: digitalocean/action-doctl@v2
+        if: env.HAS_TOKEN == 'true'
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      # an account has one registry. use it if it's there, otherwise make a free one
+      - name: Find or make the container registry
+        if: env.HAS_TOKEN == 'true'
+        run: |
+          name=$(doctl registry get --format Name --no-header 2>/dev/null || true)
+          if [[ -z $name ]]; then
+            # registry names are unique across DigitalOcean, so lead with the GitHub owner
+            name="${GITHUB_REPOSITORY_OWNER,,}-shiftchex"
+            doctl registry create "$name" --subscription-tier starter --region nyc3
+          fi
+          echo "REGISTRY=$name" >> "$GITHUB_ENV"
+
+      - name: Pick the image tag
+        if: env.HAS_TOKEN == 'true'
+        env:
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          if [[ -z $TAG ]]; then
+            echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          elif [[ $TAG =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "IMAGE_TAG=$TAG" >> "$GITHUB_ENV"
+            echo "ROLLBACK=true" >> "$GITHUB_ENV"
+          else
+            echo "Not a valid image tag: $TAG" >&2
+            exit 1
+          fi
+
+      - name: Build and push the image
+        if: env.HAS_TOKEN == 'true' && env.ROLLBACK != 'true'
+        run: |
+          image="registry.digitalocean.com/$REGISTRY/shiftchex:$IMAGE_TAG"
+          doctl registry login --expiry-seconds 900
+          docker build --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" -t "$image" .
+          docker push "$image"
+
+      - name: Create or update the app
+        id: deploy
+        if: env.HAS_TOKEN == 'true'
+        run: |
+          envsubst '$IMAGE_TAG' < .do/app.yaml > "$RUNNER_TEMP/app.yaml"
+          doctl apps create --spec "$RUNNER_TEMP/app.yaml" --upsert --update-sources --wait > /dev/null
+          url=$(doctl apps list --format Spec.Name,DefaultIngress --no-header | awk '$1 == "shiftchex" { print $2 }')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Deployed \`shiftchex:$IMAGE_TAG\`"
+            echo
+            echo "App: ${url:-not live yet, check the app in the DigitalOcean control panel}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test
+        if: steps.deploy.outputs.url != ''
+        run: curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "${{ steps.deploy.outputs.url }}/api/me"

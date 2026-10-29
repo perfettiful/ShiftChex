@@ -1,15 +1,19 @@
 ---
-title: "GoF: Observer (what happens after publish and swap decisions)"
+title: "GoF: Observer (what happens after the fact)"
 ---
 %% the controllers only emit an event. who listens is set up once in
-%% wiring.js, so adding something to "on publish" never touches the controller
+%% observers.js, so adding something to "on publish" never touches the controller
 classDiagram
     direction LR
     class ScheduleController {
-        +publish()
+        +publish(periodId)
+        +unpublish(periodId)
+        +decideTimeOff(requestId, decision)
+        +assign(shiftId, employeeId, overrideReason)
     }
     class SwapController {
         +decide(swapId, decision)
+        +withdraw(swapId, employeeId)
     }
     class EventBus {
         -handlers Map
@@ -19,19 +23,26 @@ classDiagram
     class NotifyStaff["notify staff"] {
         <<subscriber>>
         on schedule.published
+        on schedule.unpublished
+        on swap.decided
+        on timeoff.decided
     }
     class AuditLog["audit log"] {
         <<subscriber>>
         on schedule.published
+        on schedule.unpublished
         on swap.decided
+        on swap.withdrawn
+        on timeoff.decided
+        on shift.overridden
     }
     class SqliteRepository {
         +addNotice(notice)
         +addAudit(entry)
     }
 
-    ScheduleController --> EventBus : emit schedule.published
-    SwapController --> EventBus : emit swap.decided
+    ScheduleController --> EventBus : emit
+    SwapController --> EventBus : emit
     EventBus --> "*" NotifyStaff : calls
     EventBus --> "*" AuditLog : calls
     NotifyStaff --> SqliteRepository : addNotice

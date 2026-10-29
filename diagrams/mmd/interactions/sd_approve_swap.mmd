@@ -9,8 +9,8 @@ sequenceDiagram
     participant Sh as :Shift
     participant Bus as :EventBus
     Manager->>SW: decide(swapId, "approve")
-    SW->>Repo: swaps(), currentPeriod()
-    Repo-->>SW: swap, shift
+    SW->>Repo: swaps(), periodOfShift(shiftId)
+    Repo-->>SW: swap, the shift's week
     SW->>+RE: validateAssignment(shift, claimedBy, period, repo)
     RE-->>-SW: result
     alt blocking violation now
@@ -19,7 +19,8 @@ sequenceDiagram
         SW->>Sh: assign(claimedBy), status = published
         Note over SW: swap.status = approved
         SW->>Repo: transaction(saveShift, saveSwap)
-        SW->>Bus: emit("swap.decided", swap)
-        Bus->>Repo: addAudit("Swap approved")
+        SW->>Bus: emit("swap.decided", swap, shift)
+        Bus->>Repo: addNotice(claimer), addNotice(poster)
+        Bus->>Repo: addAudit("Approved ... taking ...")
         SW-->>Manager: ok
     end

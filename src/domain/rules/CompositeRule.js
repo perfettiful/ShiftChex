@@ -6,15 +6,6 @@ class CompositeRule extends Rule {
     super(id, title);
     this.children = [...children];
   }
-  add(rule) { this.children.push(rule); return this; }
-  appliesTo(scope) { return this.children.some((c) => c.appliesTo(scope)); }
-  check(ctx) {
-    const out = [];
-    for (const child of this.children) {
-      if (!child.appliesTo(ctx.scope)) continue;
-      out.push(...child.check(ctx));
-    }
-    return out;
-  }
+  check(ctx) { return this.children.flatMap((child) => child.check(ctx)); }
 }
 module.exports = CompositeRule;

@@ -1,21 +1,17 @@
 // domain classes, no imports from other folders
-
-const addDays = (date, n) => {
-  const d = new Date(date + "T12:00:00");
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-};
+const { addDays } = require("./format");
 
 class Employee {
-  constructor({ id, name, dateOfBirth, hireDate, status = "active", maxHoursPreference = null }) {
-    Object.assign(this, { id, name, dateOfBirth, hireDate, status, maxHoursPreference });
+  constructor({ id, name, dateOfBirth, hireDate, maxHoursPreference = null }) {
+    Object.assign(this, { id, name, dateOfBirth, hireDate, maxHoursPreference });
     this.qualifications = [];
     this.availability = [];
     this.timeOff = [];
     this.certs = [];
   }
   ageOn(date) {
-    const d = new Date(date), b = new Date(this.dateOfBirth);
+    // noon local time, so the birthday lands on the right day in any time zone
+    const d = new Date(date + "T12:00:00"), b = new Date(this.dateOfBirth + "T12:00:00");
     let age = d.getFullYear() - b.getFullYear();
     const m = d.getMonth() - b.getMonth();
     if (m < 0 || (m === 0 && d.getDate() < b.getDate())) age -= 1;
@@ -59,6 +55,15 @@ class Employee {
   rateFor(roleId) {
     const q = this.qualificationFor(roleId);
     return q ? q.hourlyRate : 0;
+  }
+  // every cert some role they're trained for asks for. certTypeId -> the duty that
+  // makes it count, or null when one of their roles always needs it
+  requiredCerts(rolesById) {
+    const needed = new Map();
+    this.qualifications.forEach((q) => (rolesById.get(q.roleId)?.certs || []).forEach((c) => {
+      if (!needed.has(c.certTypeId) || !c.onlyIf) needed.set(c.certTypeId, c.onlyIf);
+    }));
+    return needed;
   }
 }
 
@@ -105,9 +110,9 @@ class TimeOffRequest {
 }
 
 class Shift {
-  constructor({ id, periodId, roleId, date, startTime, endTime, required = 1,
+  constructor({ id, periodId, roleId, date, startTime, endTime,
                 employeeId = null, status = "draft", overrideReason = null, duties = [] }) {
-    Object.assign(this, { id, periodId, roleId, date, startTime, endTime, required,
+    Object.assign(this, { id, periodId, roleId, date, startTime, endTime,
                           employeeId, status, overrideReason, duties });
   }
   get hours() {
@@ -115,11 +120,15 @@ class Shift {
     const [eh, em] = this.endTime.split(":").map(Number);
     return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
   }
-  get startsAt() { return new Date(`${this.date}T${this.startTime}:00`); }
-  get endsAt() { return new Date(`${this.date}T${this.endTime}:00`); }
+  // wall clock times, read as UTC so the server's time zone and daylight saving
+  // can't change how many hours apart two shifts are
+  get startsAt() { return new Date(`${this.date}T${this.startTime}:00Z`); }
+  get endsAt() { return new Date(`${this.date}T${this.endTime}:00Z`); }
   isAssigned() { return this.employeeId !== null; }
   assign(employeeId) { this.employeeId = employeeId; this.overrideReason = null; }
   unassign() { this.employeeId = null; this.overrideReason = null; }
+  // earliest first, for sorting
+  static byStart(a, b) { return (a.date + a.startTime).localeCompare(b.date + b.startTime); }
 }
 
 class SchedulePeriod {
@@ -131,25 +140,36 @@ class SchedulePeriod {
   addShift(shift) { this.shifts.push(shift); return shift; }
   shiftsOn(date) { return this.shifts.filter((s) => s.date === date); }
   isDraft() { return this.status === "draft"; }
+  // Information Expert: the period has the shifts, the employees have the pay rates
+  laborCost(employeeById, shifts = this.shifts) {
+    return shifts.reduce((sum, s) => {
+      const e = s.isAssigned() ? employeeById.get(s.employeeId) : null;
+      return sum + (e ? e.rateFor(s.roleId) * s.hours : 0);
+    }, 0);
+  }
 }
 
+// posted -> claimed -> approved or denied. posted can be withdrawn by whoever
+// posted it, and posted or claimed get cancelled if the week is unpublished
 class SwapRequest {
-  constructor({ id, shiftId, postedBy, claimedBy = null, status = "posted",
-                postedOn, decidedOn = null, note = null }) {
-    Object.assign(this, { id, shiftId, postedBy, claimedBy, status, postedOn, decidedOn, note });
+  constructor({ id, shiftId, postedBy, claimedBy = null, status = "posted", postedOn, decidedOn = null }) {
+    Object.assign(this, { id, shiftId, postedBy, claimedBy, status, postedOn, decidedOn });
   }
+  // still waiting on someone
+  isOpen() { return this.status === "posted" || this.status === "claimed"; }
 }
 
-// returned by rules. severity = block or warn
+// returned by rules. severity is "blocking" or "warning". employeeId is who it's
+// about, or null for the whole week (coverage, budget, notice, on-site certs)
 class Violation {
-  constructor({ ruleId, severity, message, shiftId = null }) {
-    Object.assign(this, { ruleId, severity, message, shiftId });
+  constructor({ ruleId, severity, message, shiftId = null, employeeId = null }) {
+    Object.assign(this, { ruleId, severity, message, shiftId, employeeId });
   }
-  static blocking(ruleId, message, shiftId) {
-    return new Violation({ ruleId, severity: "blocking", message, shiftId });
+  static blocking(ruleId, message, shiftId = null, employeeId = null) {
+    return new Violation({ ruleId, severity: "blocking", message, shiftId, employeeId });
   }
-  static warning(ruleId, message, shiftId) {
-    return new Violation({ ruleId, severity: "warning", message, shiftId });
+  static warning(ruleId, message, shiftId = null, employeeId = null) {
+    return new Violation({ ruleId, severity: "warning", message, shiftId, employeeId });
   }
   get blocks() { return this.severity === "blocking"; }
 }

@@ -1,36 +1,45 @@
 // employee: the swap board (UC-05). shifts you can't take still show up with the reason
 import { app, roleName } from "../state.js";
 import { el } from "../dom.js";
-import { dayLabel, time } from "../format.js";
+import { icon } from "../icons.js";
+import { dayLabel, time, hours, plural } from "../format.js";
 import { act } from "../api.js";
+import { pageHead } from "../layout.js";
 
 export function boardView() {
-  const board = app.S.board || [];
+  const board = app.S.board;
+  const claimable = board.filter((b) => !b.mine && !b.result.blocking.length).length;
   return [
-    el("div", { class: "section-title" }, `Swap board, ${board.length} posted`),
-    el("div", { class: "cards" }, board.length ? board.map(card)
-      : el("p", { class: "muted" }, "Nothing posted. Post one of your own shifts from My schedule.")),
-    el("p", { class: "muted pad" },
-      "Shifts you can't take still show up here with the reason, so you can see which rule is stopping you."),
+    pageHead({ title: "Swap board", meta: board.length
+      ? `${plural(board.length, "shift")} up for grabs, ${claimable} you can take`
+      : "Nothing posted right now" }),
+    el("div", { class: "list" }, board.length ? board.map(card)
+      : el("div", { class: "card empty" }, icon("swap"), "Nothing posted. You can post one of your own shifts from My schedule.")),
+    board.length ? el("p", { class: "hint" },
+      "Shifts you can't take still show up, with the rule that's stopping you.") : null,
   ];
 }
 
 function card(b) {
-  const blocked = !b.mine && b.result && b.result.blocking.length > 0;
+  const blocked = !b.mine && b.result.blocking.length > 0;
+  const warned = !b.mine && !blocked && b.result.warnings.length > 0;
   return el("div", { class: "card" + (blocked ? " blocked" : "") },
     el("div", { class: "row" },
       el("div", { class: "grow" },
-        el("h3", {}, `${roleName(b.roleId)} · ${dayLabel(b.date)}`),
-        el("div", { class: "muted" }, `${time(b.startTime)} - ${time(b.endTime)} · ${b.hours} hours`)),
-      b.mine
-        ? el("span", { class: "pill warn" }, "Yours, waiting for someone")
+        el("h3", {}, `${dayLabel(b.date)} · ${roleName(b.roleId)}`),
+        el("div", { class: "muted small" },
+          `${time(b.startTime)} - ${time(b.endTime)} · ${hours(b.hours)} · posted by ${b.mine ? "you" : b.postedByName}`)),
+      el("div", { class: "actions" }, b.mine
+        ? [el("span", { class: "pill warn" }, "Yours, waiting for someone"),
+           el("button", { class: "link", onclick: () => withdraw(b.swapId) }, icon("undo", { size: 14 }), "Take it back")]
         : el("button", { onclick: () => claim(b.swapId), disabled: blocked || null },
-            blocked ? "Cannot claim" : "Claim shift")),
+            icon(blocked ? "blocked" : "check"), blocked ? "Can't claim" : "Claim shift"))),
     b.mine ? null
-      : blocked ? el("p", { class: "note" }, b.result.blocking[0].message)
-      : b.result.warnings.length ? el("p", { class: "muted" }, b.result.warnings[0].message)
-      : el("p", { class: "muted" }, "You're available and qualified. A manager approves it after you claim."));
+      : blocked ? el("p", { class: "note" }, icon("blocked", { size: 14 }), el("span", {}, b.result.blocking[0].message))
+      : warned ? el("p", { class: "hint" }, b.result.warnings[0].message)
+      : el("p", { class: "hint" }, "You're available and qualified. The manager approves it after you claim."));
 }
 
 const claim = (swapId) => act("/api/claim", { swapId },
-  "Claimed. It's with the manager now. The shift stays with whoever posted it until they decide.");
+  "Claimed. It's with the manager now, and the shift stays with whoever posted it until they decide.");
+const withdraw = (swapId) => act("/api/withdraw-swap", { swapId }, "Taken off the swap board. It's still yours.");

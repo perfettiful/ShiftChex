@@ -6,7 +6,7 @@ const { buildApp, find } = require("./helpers");
 
 const EVENINGS = [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, startTime: "16:00", endTime: "23:59" }));
 const blockedFor = (app, ruleId, name) => {
-  const dates = new Map(app.repo.currentPeriod().shifts.map((s) => [s.id, s.date]));
+  const dates = new Map(app.repo.workingPeriod().shifts.map((s) => [s.id, s.date]));
   return app.schedule.validate().blocking
     .filter((v) => v.ruleId === ruleId && v.message.includes(name))
     .map((v) => dates.get(v.shiftId)).sort();
@@ -49,6 +49,13 @@ describe("availability tests", () => {
         { effectiveFrom: "2026-10-12", slots: [day("09:00", "12:00"), day("13:00", "17:00")] },
         { effectiveFrom: "2026-10-12", slots: [day("09:00", "17:00", 7)] },
         { effectiveFrom: "2026-10-12" },
+        // nothing ticked would save nothing and leave the old one in place
+        { effectiveFrom: "2026-10-12", slots: [] },
+        // wrong types, straight from a bad request
+        { effectiveFrom: ["2026-10-12"], slots: EVENINGS },
+        { effectiveFrom: "2026-10-12", slots: [null] },
+        { effectiveFrom: "2026-10-12", slots: [{ weekday: 1, startTime: 900, endTime: "17:00" }] },
+        { effectiveFrom: "2026-10-99", slots: EVENINGS },
       ].forEach((body) => assert.ok(app.availability.declare("e1", body).error, JSON.stringify(body)));
       assert.ok(app.repo.employeesById().get("e1").availability.every((a) => a.effectiveFrom === "2026-01-01"));
     });
@@ -77,9 +84,11 @@ describe("availability tests", () => {
       const ask = (startDate, endDate) => app.availability.requestTimeOff("e3", { startDate, endDate });
       assert.ok(ask("2026-10-01", "2026-10-02").error);
       assert.ok(ask("2026-10-14", "2026-10-13").error);
+      assert.ok(ask("2026-11-31", "2026-12-01").error);
       assert.ok(ask("2026-10-13", "2026-10-14").ok);
       assert.ok(ask("2026-10-14", "2026-10-20").error);
-      assert.equal(app.repo.timeOff().filter((t) => t.employeeId === "e3").length, 1);
+      // tom's denied 10/10 request from the demo data is the other one
+      assert.equal(app.repo.timeOff().filter((t) => t.employeeId === "e3" && t.status === "pending").length, 1);
     });
     test("after a denial you can ask again", () => {
       // ana's 10/17 appointment is pending in the demo data

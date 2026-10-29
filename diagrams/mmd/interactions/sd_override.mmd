@@ -4,16 +4,26 @@ title: "Sequence: Override a Violation (UC-12)"
 sequenceDiagram
     actor Manager
     participant SC as :ScheduleController
+    participant RE as :RuleEngine
     participant Sh as :Shift
     participant Repo as :SqliteRepository
-    participant RE as :RuleEngine
-    participant R1 as :AvailabilityRule
+    participant Bus as :EventBus
     Manager->>SC: assign(shiftId, employeeId, overrideReason)
-    SC->>Sh: assign(employeeId)
-    SC->>Sh: overrideReason = reason
-    SC->>Repo: saveShift(shift)
-    SC->>+RE: validate(period, repo)
-    RE->>+R1: check(ctx)
-    R1-->>-RE: warning, "Overridden: reason"
-    RE-->>-SC: result, R1 under warnings
-    SC-->>Manager: assigned, warning shown
+    SC->>Repo: periodOfShift(shiftId)
+    alt reason is blank
+        SC-->>Manager: refused, give a reason
+    else reason given
+        SC->>+RE: validateAssignment(shift, employeeId, period, repo)
+        RE-->>-SC: does R1 block this person here?
+        alt R1 doesn't block
+            SC-->>Manager: refused, nothing to override
+        else R1 blocks
+            SC->>Sh: assign(employeeId), overrideReason = reason
+            SC->>Repo: saveShift(shift)
+            SC->>Bus: emit("shift.overridden")
+            Bus->>Repo: addAudit("Overrode R1 for ...")
+            SC->>+RE: validate(period, repo)
+            RE-->>-SC: R1 under warnings,<br/>anything else still blocks
+            SC-->>Manager: assigned, warning shown
+        end
+    end

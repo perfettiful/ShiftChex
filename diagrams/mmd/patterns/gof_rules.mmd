@@ -14,13 +14,12 @@ classDiagram
         +validateAssignment(shift, employeeId, period, repo)
     }
     class RuleFactory {
-        +rulesFor(organization)$ Rule
+        +rulesFor()$ Rule
     }
     class Rule {
         <<interface>>
         +id
-        +name
-        +appliesTo(scope) boolean
+        +title
         +check(ctx) Violation[]
     }
     class CompositeRule {
@@ -41,7 +40,6 @@ classDiagram
     }
     class OnSiteCertRule {
         R11
-        +appliesTo(scope) boolean
         +check(ctx) Violation[]
     }
 

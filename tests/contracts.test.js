@@ -2,13 +2,14 @@ const { describe, test } = require("node:test");
 const assert = require("node:assert/strict");
 const { buildApp, publishable } = require("./helpers");
 
-// checks the postconditions from our operation contracts are actually true
+// checks the postconditions from our operation contracts are actually true.
+// p2 is next week, the draft that publishable() fills in
 
 // published week, with dana's monday lunch shift up for grabs
 function posted() {
   const app = publishable();
   app.schedule.publish();
-  const shift = app.repo.currentPeriod().shifts.find((s) =>
+  const shift = app.repo.period("p2").shifts.find((s) =>
     s.date === "2026-10-12" && s.roleId === "server" && s.startTime === "11:00" && s.employeeId === "e1");
   const { swap } = app.swaps.post(shift.id, "e1");
   return { app, shiftId: shift.id, swapId: swap.id };
@@ -16,7 +17,7 @@ function posted() {
 
 // read it back from the db instead of checking the objects we passed in
 const saved = (app, shiftId, swapId) => ({
-  shift: app.repo.currentPeriod().shifts.find((s) => s.id === shiftId),
+  shift: app.repo.period("p2").shifts.find((s) => s.id === shiftId),
   swap: app.repo.swaps().find((s) => s.id === swapId),
 });
 
@@ -25,29 +26,33 @@ describe("contract tests", () => {
     test("refused while anything blocks, period stays in draft", () => {
       const { schedule, repo } = buildApp();
       assert.ok(schedule.publish().error);
-      assert.equal(repo.currentPeriod().status, "draft");
+      assert.equal(repo.period("p2").status, "draft");
     });
     test("period is published", () => {
       const app = publishable();
       app.schedule.publish();
-      assert.equal(app.repo.currentPeriod().status, "published");
+      assert.equal(app.repo.period("p2").status, "published");
     });
     test("every shift is published", () => {
       const app = publishable();
       app.schedule.publish();
-      assert.ok(app.repo.currentPeriod().shifts.every((s) => s.status === "published"));
+      assert.ok(app.repo.period("p2").shifts.every((s) => s.status === "published"));
     });
     test("one audit entry, one notice per person on the schedule", () => {
       const app = publishable();
+      const [audits, notices] = [app.repo.audit().length, app.repo.notices().length];
       app.schedule.publish();
-      const people = new Set(app.repo.currentPeriod().shifts.map((s) => s.employeeId));
-      assert.equal(app.repo.audit().length, 1);
-      assert.equal(app.repo.notices().length, people.size);
+      const people = new Set(app.repo.period("p2").shifts.map((s) => s.employeeId));
+      assert.equal(app.repo.audit().length, audits + 1);
+      assert.equal(app.repo.audit().at(-1).what, "Published the week of 10/12.");
+      const sent = app.repo.notices().slice(notices);
+      assert.deepEqual(new Set(sent.map((n) => n.employeeId)), people);
+      sent.forEach((n) => assert.equal(n.createdOn, "2026-10-05"));
     });
     test("can't publish twice, it has to be in draft", () => {
       const app = publishable();
-      app.schedule.publish();
-      assert.ok(app.schedule.publish().error);
+      app.schedule.publish("p2");
+      assert.ok(app.schedule.publish("p2").error);
     });
   });
 

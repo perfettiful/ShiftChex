@@ -1,21 +1,13 @@
 const Rule = require("./Rule");
 const CompositeRule = require("./CompositeRule");
-const { Violation, DUTIES } = require("../index");
+const { Violation, Shift, DUTIES } = require("../index");
+const { hhmm, dayName, fullDate } = require("../format");
 
 const assignedShifts = (ctx) => ctx.shifts.filter((s) => s.isAssigned());
 const emp = (ctx, id) => ctx.employeeById.get(id);
 const roleName = (ctx, id) => (ctx.roleById.get(id) || { name: id }).name;
-const hhmm = (t) => {
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "pm" : "am";
-  const hr = h % 12 === 0 ? 12 : h % 12;
-  return m ? `${hr}:${String(m).padStart(2, "0")}${ampm}` : `${hr}${ampm}`;
-};
-const dayName = (d) => new Date(d + "T12:00:00")
-  .toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
-const fullDate = (d) => new Date(d + "T12:00:00")
-  .toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
 const certName = (ctx, id) => ctx.certTypeById.get(id).name;
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // R1
 class AvailabilityRule extends Rule {
@@ -27,10 +19,10 @@ class AvailabilityRule extends Rule {
       if (!e || e.isAvailableOn(s.date, s.startTime, s.endTime)) continue;
       if (s.overrideReason) {
         out.push(Violation.warning(this.id,
-          `${e.name} is outside declared availability on ${dayName(s.date)}. Overridden: ${s.overrideReason}`, s.id));
+          `${e.name} is outside declared availability on ${dayName(s.date)}. Overridden: ${s.overrideReason}`, s.id, e.id));
       } else {
         out.push(Violation.blocking(this.id,
-          `${e.name} has not said they can work ${hhmm(s.startTime)} to ${hhmm(s.endTime)} on ${dayName(s.date)}.`, s.id));
+          `${e.name} has not said they can work ${hhmm(s.startTime)} to ${hhmm(s.endTime)} on ${dayName(s.date)}.`, s.id, e.id));
       }
     }
     return out;
@@ -46,19 +38,22 @@ class TimeOffRule extends Rule {
       const e = emp(ctx, s.employeeId);
       if (e && e.hasApprovedTimeOffOn(s.date)) {
         out.push(Violation.blocking(this.id,
-          `${e.name} has approved time off on ${dayName(s.date)}. This one cannot be overridden.`, s.id));
+          `${e.name} has approved time off on ${dayName(s.date)}. This one cannot be overridden.`, s.id, e.id));
       }
     }
     return out;
   }
 }
 
-// R3
+// R3. ctx.nearby has the published shifts either side of the week, so sunday night
+// into monday still counts
 class RestRule extends Rule {
   constructor() { super("R3", "Minimum rest"); }
   check(ctx) {
     const out = [], byEmployee = new Map();
-    for (const s of assignedShifts(ctx)) {
+    const inWeek = new Set(ctx.shifts.map((s) => s.id));
+    const nearby = (ctx.nearby || []).filter((s) => s.isAssigned() && !inWeek.has(s.id));
+    for (const s of [...assignedShifts(ctx), ...nearby]) {
       if (!byEmployee.has(s.employeeId)) byEmployee.set(s.employeeId, []);
       byEmployee.get(s.employeeId).push(s);
     }
@@ -70,16 +65,18 @@ class RestRule extends Rule {
       let prev = list[0];
       for (const s of list.slice(1)) {
         const gap = (s.startsAt - prev.endsAt) / 3600000;
-        if (gap < 0) {
+        // only report it on a shift from this week
+        const shiftId = inWeek.has(s.id) ? s.id : inWeek.has(prev.id) ? prev.id : null;
+        if (shiftId && gap < 0) {
           // overlap means double booked, not short on rest
           out.push(Violation.blocking(this.id,
             `${e.name} is double booked on ${dayName(s.date)}: ${hhmm(prev.startTime)} to ${hhmm(prev.endTime)} ` +
-            `and ${hhmm(s.startTime)} to ${hhmm(s.endTime)}.`, s.id));
-        } else if (gap < minRest) {
+            `and ${hhmm(s.startTime)} to ${hhmm(s.endTime)}.`, shiftId, employeeId));
+        } else if (shiftId && gap < minRest) {
           out.push(Violation.blocking(this.id,
             `${e.name} finishes at ${hhmm(prev.endTime)} on ${dayName(prev.date)} and starts at ` +
             `${hhmm(s.startTime)} on ${dayName(s.date)}. That is ${gap.toFixed(1)} hours rest, ` +
-            `and this business requires ${minRest}.`, s.id));
+            `and this business requires ${minRest}.`, shiftId, employeeId));
         }
         if (s.endsAt > prev.endsAt) prev = s;
       }
@@ -89,21 +86,27 @@ class RestRule extends Rule {
 }
 
 // R4
+// the hour cap is for the whole day, so two short shifts can still go over it
 class MinorHoursRule extends Rule {
   constructor() { super("R4", "Under 18 restrictions"); }
   check(ctx) {
-    const out = [];
+    const out = [], hoursOn = new Map();
     const { minorMaxDailyHours, minorCurfew } = ctx.settings;
-    for (const s of assignedShifts(ctx)) {
+    for (const s of [...assignedShifts(ctx)].sort(Shift.byStart)) {
       const e = emp(ctx, s.employeeId);
       if (!e || !e.isMinorOn(s.date)) continue;
-      if (s.hours > minorMaxDailyHours) {
-        out.push(Violation.blocking(this.id,
-          `${e.name} is under 18 and this shift is ${s.hours} hours. The daily cap is ${minorMaxDailyHours}.`, s.id));
+      const key = `${e.id} ${s.date}`;
+      const before = hoursOn.get(key) || 0;
+      hoursOn.set(key, before + s.hours);
+      // only flag the shift that tips the day over
+      if (before <= minorMaxDailyHours && before + s.hours > minorMaxDailyHours) {
+        out.push(Violation.blocking(this.id, before
+          ? `${e.name} is under 18 and would work ${before + s.hours} hours on ${dayName(s.date)}. The daily cap is ${minorMaxDailyHours}.`
+          : `${e.name} is under 18 and this shift is ${s.hours} hours. The daily cap is ${minorMaxDailyHours}.`, s.id, e.id));
       }
       if (s.endTime > minorCurfew) {
         out.push(Violation.blocking(this.id,
-          `${e.name} is under 18 and cannot work past ${hhmm(minorCurfew)}. This shift ends at ${hhmm(s.endTime)}.`, s.id));
+          `${e.name} is under 18 and cannot work past ${hhmm(minorCurfew)}. This shift ends at ${hhmm(s.endTime)}.`, s.id, e.id));
       }
     }
     return out;
@@ -120,7 +123,7 @@ class QualificationRule extends Rule {
       if (!e) continue;
       if (!e.qualificationFor(s.roleId)) {
         out.push(Violation.blocking(this.id,
-          `${e.name} is not trained for ${roleName(ctx, s.roleId)}.`, s.id));
+          `${e.name} is not trained for ${roleName(ctx, s.roleId)}.`, s.id, e.id));
       }
     }
     return out;
@@ -130,7 +133,6 @@ class QualificationRule extends Rule {
 // R6
 class CoverageRule extends Rule {
   constructor() { super("R6", "Coverage"); }
-  appliesTo(scope) { return scope === "period"; }
   check(ctx) {
     return ctx.shifts.filter((s) => !s.isAssigned()).map((s) =>
       Violation.blocking(this.id,
@@ -150,7 +152,8 @@ class OvertimeRule extends Rule {
       if (total <= ctx.settings.overtimeThreshold) continue;
       const e = emp(ctx, employeeId);
       out.push(Violation.warning(this.id,
-        `${e.name} is scheduled ${total.toFixed(1)} hours this week. The threshold is ${ctx.settings.overtimeThreshold}.`));
+        `${e.name} is scheduled ${total.toFixed(1)} hours this week. The threshold is ${ctx.settings.overtimeThreshold}.`,
+        null, employeeId));
     }
     return out;
   }
@@ -159,12 +162,8 @@ class OvertimeRule extends Rule {
 // R8
 class BudgetRule extends Rule {
   constructor() { super("R8", "Labour budget"); }
-  appliesTo(scope) { return scope === "period"; }
   check(ctx) {
-    const cost = assignedShifts(ctx).reduce((sum, s) => {
-      const e = emp(ctx, s.employeeId);
-      return sum + (e ? e.rateFor(s.roleId) * s.hours : 0);
-    }, 0);
+    const cost = ctx.period.laborCost(ctx.employeeById, ctx.shifts);
     if (cost <= ctx.period.budget) return [];
     return [Violation.warning(this.id,
       `Projected labour is $${cost.toFixed(0)} against a budget of $${ctx.period.budget}.`)];
@@ -172,14 +171,16 @@ class BudgetRule extends Rule {
 }
 
 // R9
+// a draft is measured from today. once it's out, from the day it was published
 class NoticeRule extends Rule {
   constructor() { super("R9", "Advance notice"); }
-  appliesTo(scope) { return scope === "period"; }
   check(ctx) {
-    const days = Math.round((new Date(ctx.period.startDate) - new Date(ctx.today)) / 86400000);
+    const from = ctx.period.publishedOn || ctx.today;
+    const days = Math.round((new Date(ctx.period.startDate) - new Date(from)) / 86400000);
     if (days >= ctx.settings.noticeDays) return [];
-    return [Violation.warning(this.id,
-      `This period starts in ${days} days. The target is ${ctx.settings.noticeDays} days of notice.`)];
+    return [Violation.warning(this.id, ctx.period.publishedOn
+      ? `This week went out ${plural(days, "day")} ahead. The target is ${ctx.settings.noticeDays} days of notice.`
+      : `This period starts in ${plural(days, "day")}. The target is ${ctx.settings.noticeDays} days of notice.`)];
   }
 }
 
@@ -212,13 +213,13 @@ class CertificationRule extends Rule {
       }
       if (problems.length) {
         out.push(Violation.blocking(this.id,
-          `${e.name} can't work ${roleName(ctx, s.roleId)} on ${dayName(s.date)}: ${problems.join("; ")}.`, s.id));
+          `${e.name} can't work ${roleName(ctx, s.roleId)} on ${dayName(s.date)}: ${problems.join("; ")}.`, s.id, e.id));
       }
     }
     for (const [employeeId, certs] of grace) {
       const list = [...certs].map(([id, due]) => `${certName(ctx, id)} by ${fullDate(due)}`);
       out.push(Violation.warning(this.id,
-        `${emp(ctx, employeeId).name} is a new hire and still needs ${list.join(", ")}.`));
+        `${emp(ctx, employeeId).name} is a new hire and still needs ${list.join(", ")}.`, null, employeeId));
     }
     return out;
   }
@@ -228,7 +229,6 @@ class CertificationRule extends Rule {
 // every minute the place is open needs someone with each site cert on the floor
 class OnSiteCertRule extends Rule {
   constructor() { super("R11", "On-site certifications"); }
-  appliesTo(scope) { return scope === "period"; }
   check(ctx) {
     const out = [];
     const byDate = new Map();
@@ -244,9 +244,11 @@ class OnSiteCertRule extends Rule {
         for (let i = 0; i < times.length; i++) {
           const from = times[i], to = times[i + 1];
           const here = to ? shifts.filter((s) => s.startTime <= from && s.endTime >= to) : [];
+          // has to actually hold it. a new hire inside their window doesn't count
           const covered = !here.length || here.some((s) => {
             const e = emp(ctx, s.employeeId);
-            return e && e.certStatus(type, date).ok;
+            const st = e && e.certStatus(type, date);
+            return st && st.ok && !st.missing;
           });
           if (!covered && gapStart === null) gapStart = from;
           if (covered && gapStart !== null) {
