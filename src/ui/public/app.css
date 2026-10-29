@@ -3,7 +3,7 @@
    2. base     elements
    3. layout   containers, header bar, page head, sections, grids
    4. parts    buttons, icons, badges, cards, forms, tables, dialog, toast
-   5. screens  schedule grid, rule panel, report, sign in
+   5. screens  schedule grid, rule panel, report, sign in, landing page
    6. breakpoints, then print
 
    breakpoints: 1360px (rule panel moves under the schedule grid), 1200px laptop,
@@ -66,13 +66,13 @@ main.container{padding-bottom:var(--s-10)}
 .bar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
 .bar-inner{display:flex;align-items:center;gap:var(--s-6);min-height:var(--bar-height)}
 .brand{display:flex;align-items:center;gap:var(--s-2);font-size:19px;font-weight:750;color:var(--ink);
-  letter-spacing:-.01em;white-space:nowrap}
+  letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
 .brand svg{flex:none}
 nav{display:flex;gap:var(--s-1);margin-right:auto;align-self:stretch;min-width:0}
-nav button{background:none;border:none;border-radius:0;color:var(--mut);padding:0 var(--s-3);
-  border-bottom:3px solid transparent;border-top:3px solid transparent}
-nav button:hover{color:var(--ink);background:none;border-color:transparent}
-nav button.on,nav button.on:hover{color:var(--ink);border-bottom-color:var(--blue)}
+nav a{display:inline-flex;align-items:center;gap:6px;color:var(--mut);padding:0 var(--s-3);font-weight:600;
+  text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent;border-top:3px solid transparent}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--ink);border-bottom-color:var(--blue)}
 .badge{display:inline-block;min-width:19px;padding:0 6px;border-radius:var(--pill);
   background:var(--blue);color:#fff;font-size:var(--fs-xs);line-height:19px;text-align:center}
 .who{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-sm);color:var(--mut);white-space:nowrap}
@@ -123,6 +123,13 @@ button.link:hover{text-decoration:underline;background:none}
 button.sm{padding:5px 10px;font-size:var(--fs-sm)}
 button[disabled],button[disabled]:hover{background:#eceef2;color:#a3aab6;border-color:#dfe3ea;cursor:not-allowed}
 button.link[disabled]{background:none}
+
+/* a link that looks like a button, on the landing page */
+a.button{display:inline-flex;align-items:center;gap:6px;font-weight:600;line-height:1.3;text-decoration:none;
+  border-radius:var(--radius-sm);border:1px solid var(--blue);background:var(--blue);color:#fff;padding:8px 16px}
+a.button:hover{background:var(--blue-2);border-color:var(--blue-2)}
+a.button.ghost{background:var(--surface);color:var(--blue);border-color:var(--blue-line)}
+a.button.ghost:hover{background:var(--bluebg);border-color:var(--blue)}
 
 /* week picker: back, the week, forward */
 .week-picker{display:inline-flex;align-items:stretch;gap:var(--s-1);max-width:100%}
@@ -303,6 +310,24 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 .auth input{width:100%}
 .auth button[type=submit]{width:100%;padding:9px;justify-self:stretch}
 
+/* landing page and the 404 page. the footer stays at the bottom on a short page */
+body.site{display:flex;flex-direction:column;min-height:100vh}
+body.site main{flex:1}
+.bar-inner > a.button{margin-left:auto}
+.hero{padding:var(--s-10) 0 var(--s-8);max-width:720px}
+.hero h1{font-size:clamp(30px,5vw,46px);line-height:1.1;letter-spacing:-.025em}
+.hero .lead{font-size:var(--fs-lg);color:var(--ink-2);margin-top:var(--s-4)}
+.hero .actions{margin-top:var(--s-6)}
+.hero .hint{margin-top:var(--s-3)}
+.features{display:grid;gap:var(--s-4);grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
+  padding-bottom:var(--s-10)}
+.feature .icon{color:var(--blue)}
+.feature h3{margin-top:var(--s-3)}
+.feature p{color:var(--mut);font-size:var(--fs-sm);margin-top:var(--s-1)}
+.site-footer{border-top:1px solid var(--line);background:var(--surface);padding:var(--s-5) 0;color:var(--mut);
+  font-size:var(--fs-sm)}
+.site-footer a{color:var(--blue)}
+
 /* 6. breakpoints */
 /* the grid and the rule panel only sit side by side when the grid gets its full width */
 @media (max-width:1360px){
@@ -328,9 +353,9 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
   .who #signedin{display:none}
   .who button .label{display:none}
   nav{gap:0}
-  nav button{padding:0 var(--s-2);font-size:13px;gap:5px}
-  nav button .icon{display:none}
-  nav button:first-child{padding-left:0}
+  nav a{padding:0 var(--s-2);font-size:13px;gap:5px}
+  nav a .icon{display:none}
+  nav a:first-child{padding-left:0}
   .page-head{gap:var(--s-4);padding:var(--s-5) 0}
   .toolbar{align-items:stretch}
   .toolbar > *,.meter{flex:1 1 100%}

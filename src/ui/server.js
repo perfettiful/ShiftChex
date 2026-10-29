@@ -7,6 +7,10 @@ const path = require("path");
 const { buildApp } = require("../application/wiring");
 
 const PUBLIC = path.join(__dirname, "public");
+// "/" is the landing page. each of the app's screens has its own path, and they all
+// load app.html, which picks the screen from the path (PATHS in public/js/main.js)
+const APP_PATHS = new Set(["/login", "/schedule", "/approvals", "/report", "/people",
+  "/my-schedule", "/availability", "/time-off", "/swap-board"]);
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml" };
 const COOKIE = "shiftchex_session";
 // no request this app takes comes anywhere near this
@@ -94,18 +98,19 @@ function createServer(app = buildApp()) {
   }
 
   function file(req, res, url) {
-    const full = path.join(PUBLIC, url.pathname === "/" ? "index.html" : url.pathname);
-    // URL already resolved any ../ in the path, this is just a second lock on the door
-    if ((req.method !== "GET" && req.method !== "HEAD") || !full.startsWith(PUBLIC + path.sep)) {
-      res.writeHead(404);
-      return res.end("Not found");
-    }
-    fs.readFile(full, (err, data) => {
-      if (err) { res.writeHead(404); return res.end("Not found"); }
+    const page = url.pathname.length > 1 ? url.pathname.replace(/\/$/, "") : url.pathname;
+    const name = page === "/" ? "index.html" : APP_PATHS.has(page) ? "app.html" : page;
+    const full = path.join(PUBLIC, name);
+    const send = (status, file, data) => {
       // no-cache so a browser never keeps running old js after someone pulls new code
-      res.writeHead(200, { "Content-Type": MIME[path.extname(full)] || "text/plain", "Cache-Control": "no-cache" });
+      res.writeHead(status, { "Content-Type": MIME[path.extname(file)] || "text/plain", "Cache-Control": "no-cache" });
       res.end(req.method === "HEAD" ? undefined : data);
-    });
+    };
+    const notFound = () => fs.readFile(path.join(PUBLIC, "404.html"), (err, data) =>
+      (err ? send(404, "", "Not found") : send(404, "404.html", data)));
+    // URL already resolved any ../ in the path, this is just a second lock on the door
+    if ((req.method !== "GET" && req.method !== "HEAD") || !full.startsWith(PUBLIC + path.sep)) return notFound();
+    fs.readFile(full, (err, data) => (err ? notFound() : send(200, full, data)));
   }
 
   return http.createServer(async (req, res) => {

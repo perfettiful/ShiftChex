@@ -54,6 +54,21 @@ describe("server tests", () => {
     assert.equal(res.status, 401);
   });
 
+  test("the landing page at /, the app on each screen's path, a 404 page for the rest", async () => {
+    const page = async (p) => { const r = await fetch(base + p); return [r.status, await r.text()]; };
+    const [status, home] = await page("/");
+    assert.equal(status, 200);
+    assert.match(home, /Try the demo/);
+    for (const p of ["/login", "/schedule", "/report", "/my-schedule", "/swap-board", "/schedule/"]) {
+      const [s, body] = await page(p);
+      assert.equal(s, 200, p);
+      assert.match(body, /\/js\/main\.js/, p);
+    }
+    const [missing, body] = await page("/nope");
+    assert.equal(missing, 404);
+    assert.match(body, /That page isn't here/);
+  });
+
   test("serves the app's files and nothing outside them", async () => {
     assert.equal((await fetch(base + "/")).status, 200);
     assert.equal((await fetch(base + "/app.css")).headers.get("content-type"), "text/css");
