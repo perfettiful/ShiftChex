@@ -84,7 +84,8 @@ few use a temp file), so they never touch `data/shiftchex.db`.
 `.github/workflows/ci-cd.yml` runs the tests on every push. On `main` it also
 builds the Docker image, pushes it to the DigitalOcean container registry (and
 makes a free one if there isn't one), then creates or updates the App Platform
-app from `.do/app.yaml`. The live URL ends up on the run's summary page.
+app from `.do/app.yaml`. It's live at https://shiftchex.work, whose DNS is at
+Cloudflare (CNAME records to the app's `ondigitalocean.app` address, DNS only).
 
 It needs one repo secret, a DigitalOcean API token with access to apps and the
 container registry:

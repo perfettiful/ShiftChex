@@ -3,6 +3,14 @@
 name: shiftchex
 region: nyc
 
+# DNS is at Cloudflare: both names are CNAMEs to the app's ondigitalocean.app address,
+# DNS only (not proxied), and App Platform sets up the https certificates
+domains:
+  - domain: shiftchex.work
+    type: PRIMARY
+  - domain: www.shiftchex.work
+    type: ALIAS
+
 services:
   - name: web
     # the account's own container registry (DOCR), so App Platform needs no extra login
