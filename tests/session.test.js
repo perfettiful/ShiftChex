@@ -181,6 +181,15 @@ describe("api tests", () => {
     assert.ok(data.result.warnings.some((v) => v.ruleId === "R1" && v.shiftId === sunday.id));
   });
 
+  test("only the manager can add an employee", async () => {
+    const body = { name: "Sam Hill", dateOfBirth: "1999-01-01", hireDate: "2026-10-05", roleId: "host", hourlyRate: 15 };
+    assert.equal((await call("POST", "/api/employees", "e1", body)).status, 403);
+    const { status, data } = await call("POST", "/api/employees", "manager", body);
+    assert.equal(status, 200);
+    const { data: state } = await call("GET", "/api/state", "manager");
+    assert.ok(state.employees.some((e) => e.id === data.employee.id));
+  });
+
   test("the manager's state follows the week they pick", async () => {
     const live = await call("GET", "/api/state?periodId=p1", "manager");
     assert.equal(live.data.period.status, "published");

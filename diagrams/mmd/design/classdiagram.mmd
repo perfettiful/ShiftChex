@@ -4,7 +4,7 @@ config:
   layout: elk
 ---
 %% the application layer. every system operation from the SSDs lands on one
-%% of the five controllers, and only the repository ever sees SQL.
+%% of the six controllers, and only the repository ever sees SQL.
 %% a periodId that's left out means the week being worked on (the first draft)
 classDiagram
     direction TB
@@ -44,6 +44,10 @@ classDiagram
         +stateFor(user, periodId) State
         +resetDemo() Result
     }
+    class StaffController {
+        <<Controller>>
+        +add(input) Result
+    }
     class RuleEngine {
         <<Pure Fabrication>>
         -root Rule
@@ -69,6 +73,7 @@ classDiagram
         +periodOfShift(shiftId) SchedulePeriod
         +shiftsBetween(from, to) Shift[]
         +employees() Employee[]
+        +addEmployee(employee) string
         +swaps() SwapRequest[]
         +saveShift(shift)
         +savePeriod(period)
@@ -98,6 +103,8 @@ classDiagram
     SwapController --> SqliteRepository
     AvailabilityController --> SqliteRepository
     ReportController --> SqliteRepository
+    StaffController --> EventBus
+    StaffController --> SqliteRepository
     RuleEngine --> "1" Rule : root
     RuleFactory ..> Rule : «create»
     Rule ..> Violation : «create»
