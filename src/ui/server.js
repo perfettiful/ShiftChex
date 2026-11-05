@@ -52,7 +52,7 @@ async function inputFor(req, url) {
 
 // ui layer. only calls controllers, never the repository
 function createServer(app = buildApp()) {
-  const { schedule, swaps, availability, report, session } = app;
+  const { schedule, swaps, availability, report, session, staff } = app;
 
   // [who can call it, handler]. handlers get the input, the signed in user and their token.
   // employee actions always use the signed in employee, not an id from the body
@@ -71,6 +71,7 @@ function createServer(app = buildApp()) {
     "POST /api/unpublish":        ["manager", (b) => schedule.unpublish(b.periodId)],
     "POST /api/decide-timeoff":   ["manager", (b) => schedule.decideTimeOff(b.requestId, b.decision)],
     "POST /api/decide-swap":      ["manager", (b) => swaps.decide(b.swapId, b.decision)],
+    "POST /api/employees":        ["manager", (b) => staff.add(b)],
     // employee
     "POST /api/availability":     ["employee", (b, u) => availability.declare(u.employeeId, b)],
     "POST /api/time-off":         ["employee", (b, u) => availability.requestTimeOff(u.employeeId, b)],

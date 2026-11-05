@@ -220,6 +220,23 @@ class SqliteRepository {
       VALUES (?, ?, ?, ?, ?, ?)`, t.id, t.employeeId, t.startDate, t.endDate, v(t.reason), t.status);
   }
 
+  // Employee info, role (1), max hours.
+  // Duplicate names handled by adding # to username. PW default to demo.
+  addEmployee(e) {
+    return this.transaction(() => {
+      this.#run(`INSERT INTO employee (id, name, date_of_birth, hire_date, max_hours_preference)
+        VALUES (?, ?, ?, ?, ?)`, e.id, e.name, e.dateOfBirth, e.hireDate, v(e.maxHoursPreference));
+      e.qualifications.forEach((q) => this.#run(
+        "INSERT INTO qualification (employee_id, role_id, hourly_rate) VALUES (?, ?, ?)", e.id, q.roleId, q.hourlyRate));
+      const base = seed.username(e.name) || "employee";
+      let username = base;
+      for (let n = 2; this.accountByUsername(username); n++) username = `${base}${n}`;
+      this.#run(`INSERT INTO user_account (id, username, password_hash, name, role, employee_id)
+        VALUES (?, ?, ?, ?, ?, ?)`, e.id, username, hashPassword(seed.DEMO_PASSWORD), e.name, "employee", e.id);
+      return username;
+    });
+  }
+
   saveTimeOff(t) {
     this.#run("UPDATE time_off_request SET status = ? WHERE id = ?", t.status, t.id);
   }

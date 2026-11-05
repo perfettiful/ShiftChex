@@ -78,6 +78,7 @@ few use a temp file), so they never touch `data/shiftchex.db`.
 | `engine.test.js` | the rule tree, the factory and the engine |
 | `contracts.test.js` | the postconditions from our operation contracts |
 | `availability.test.js` | UC-01 and UC-02 |
+| `staff.test.js` | management adding employee |
 | `override.test.js` | UC-12 |
 | `report.test.js` | UC-11 |
 | `weeks.test.js` | the demo weeks and the swap lifecycle |
@@ -269,8 +270,9 @@ lists them. After changing a `.mmd` file run `npm run diagrams`.
 | Observer | `application/events.js` and `application/observers.js` |
 | Adapter | `persistence/repository.js` |
 | Facade, Pure Fabrication | `application/RuleEngine.js` |
-| Controller | the five controllers in `application/` |
-| High Cohesion | swaps and the report have their own controllers |
+| Controller | the six controllers in `application/` |
+| High Cohesion | swaps, the report and hiring have their own controllers |
+| Creator | `StaffController` |
 | Information Expert | `Employee` (availability, certs) and `SchedulePeriod` (labor cost) |
 
 ### Rules

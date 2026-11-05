@@ -33,6 +33,7 @@ const audit = {
   swapWithdrawn: (posterName, label) => `${posterName} took their ${label} off the swap board.`,
   timeOff: (t, employeeName) => `${t.status === "approved" ? "Approved" : "Denied"} time off for ` +
     `${employeeName}, ${dateRange(t.startDate, t.endDate)}.`,
+  hired: (employeeName, roleName, rate) => `Added ${employeeName} as ${roleName} at $${rate}/hr.`,
 };
 
 module.exports = { notice, audit, shiftLabel, shiftWithTimes };
