@@ -50,6 +50,11 @@ function subscribe(events, repo) {
   events.on("shift.overridden", ({ shift, employee, reason }) => {
     log(audit.override(employee.name, shift, roleName(shift.roleId), reason));
   });
+
+  events.on("employee.added", ({ employee }) => {
+    const q = employee.qualifications[0];
+    log(audit.hired(employee.name, roleName(q.roleId), q.hourlyRate));
+  });
 }
 
 module.exports = { subscribe };
