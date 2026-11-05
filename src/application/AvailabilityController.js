@@ -1,14 +1,7 @@
 const { TimeOffRequest } = require("../domain");
+const { isDate } = require("../domain/format");
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-// the body is JSON from the browser, so check the type before the format.
-// a date also has to exist, so 2026-02-30 is out
-const isDate = (x) => {
-  if (typeof x !== "string" || !DATE.test(x)) return false;
-  const d = new Date(`${x}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(x);
-};
 const isTime = (x) => typeof x === "string" && TIME.test(x);
 
 // UC-01 and UC-02, the employee side. R1 checks availability, R2 checks approved time off

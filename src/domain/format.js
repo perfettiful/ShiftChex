@@ -3,6 +3,15 @@
 
 const at = (d) => new Date(d + "T12:00:00");
 
+// input from the browser, so check the type before the format.
+// a date also has to exist, so 2026-02-30 is out
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isDate = (x) => {
+  if (typeof x !== "string" || !DATE.test(x)) return false;
+  const d = new Date(`${x}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(x);
+};
+
 // "2026-10-05" + 3 -> "2026-10-08". done in UTC so the time zone can't shift the day
 const addDays = (date, n) => {
   const d = new Date(date + "T00:00:00Z");
@@ -28,4 +37,4 @@ const monthDay = (d) => at(d).toLocaleDateString("en-US", { month: "numeric", da
 // "10/13" or "10/13 to 10/14"
 const dateRange = (from, to) => (from === to ? monthDay(from) : `${monthDay(from)} to ${monthDay(to)}`);
 
-module.exports = { addDays, hhmm, dayName, fullDate, monthDay, dateRange };
+module.exports = { isDate, addDays, hhmm, dayName, fullDate, monthDay, dateRange };
