@@ -7,7 +7,7 @@ const buildApp = () => wiring.buildApp({ db: ":memory:" });
 
 const SETTINGS = {
   minRestHours: 10, overtimeThreshold: 40, minorMaxDailyHours: 8,
-  minorCurfew: "22:00", noticeDays: 14, siteCerts: [],
+  minorCurfew: "22:00", noticeDays: 14, siteCerts: [], partTimeMaxHours: 32,
 };
 
 const CERTS = [
@@ -40,8 +40,9 @@ function ctx({ shifts = [], employees = [], scope = "period", today = "2026-10-0
 
 // certs are [type, issuedOn, expiresOn]
 function person(id, name, { dob = "1995-01-01", hired = "2025-01-01", roles = ["server"],
-                            from = "06:00", to = "23:59", certs = [], timeOff = [] } = {}) {
-  const e = new Employee({ id, name, dateOfBirth: dob, hireDate: hired });
+                            from = "06:00", to = "23:59", certs = [], timeOff = [],
+                            employmentType = "fullTime" } = {}) {
+  const e = new Employee({ id, name, dateOfBirth: dob, hireDate: hired, employmentType });
   e.qualifications = roles.map((roleId) => new Qualification({ roleId, hourlyRate: 20 }));
   e.availability = [0, 1, 2, 3, 4, 5, 6].map((weekday) =>
     new Availability({ weekday, startTime: from, endTime: to, effectiveFrom: "2020-01-01" }));

@@ -17,6 +17,7 @@ mmd/ and images/
 ```
 npm run diagrams              # render everything
 npm run diagrams -- erd patterns/   # only paths that contain erd or patterns/
+DIAGRAM_SCALE=2 npm run diagrams    # smaller files. the default is 4x
 ```
 
 It runs mermaid-cli through `npx`, using Chrome if it's installed. Every diagram
@@ -24,6 +25,10 @@ shares the look set in `mermaid.config.json` and `mermaid.css`, so change those
 instead of styling diagrams one at a time.
 
 Layout tips if you add one:
+- Keep it compact. Render it both ways (`TB` and `LR`, `elk` and `dagre`) and keep
+  whichever is smaller and closest to a page shape. Wide trees usually do better
+  `LR` (the ERD, the rule tree, the cert check), and short labels keep the
+  decision diamonds from ballooning.
 - Busy class, flow and ER diagrams usually look cleaner with `layout: elk` in the
   front matter (straight right-angle lines). The domain model looked better with
   the default layout, so try both.
@@ -52,7 +57,7 @@ Marked **new** if it was added in Elaboration 2.
 | Diagram | Source |
 |---|---|
 | Domain model, updated with CertType, Certificate and Notice | [domain](mmd/models/domain.mmd) |
-| **new** Data model (ER), every table from migrations 001 to 004 | [erd](mmd/models/erd.mmd) |
+| **new** Data model (ER), every table from migrations 001 to 006 | [erd](mmd/models/erd.mmd) |
 
 ![Domain model](images/models/domain.png)
 ![Data model](images/models/erd.png)

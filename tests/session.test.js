@@ -99,7 +99,7 @@ describe("api tests", () => {
   test("the demo accounts come from the server, manager first", async () => {
     const { data } = await call("GET", "/api/demo-accounts");
     assert.equal(data[0].role, "manager");
-    assert.equal(data.filter((u) => u.role === "employee").length, 17);
+    assert.equal(data.filter((u) => u.role === "employee").length, 21);
     assert.equal(data.find((u) => u.id === "e1").username, "dana.park");
   });
 

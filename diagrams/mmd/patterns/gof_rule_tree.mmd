@@ -1,7 +1,9 @@
 ---
 title: "GoF: Factory (the rule tree RuleFactory builds)"
 config:
-  layout: elk
+  layout: dagre
+  flowchart:
+    wrappingWidth: 260
 ---
 %% the actual objects at runtime. the engine only holds the root and never
 %% learns it's a tree. adding a rule = one new class + one line in the factory
@@ -17,13 +19,14 @@ flowchart LR
     ALL --> BLK
     ALL --> WRN
     BLK --> R1["R1 Availability"]
-    BLK --> R2["R2 Approved time off"]
+    BLK --> R2["R2 Time off"]
     BLK --> R3["R3 Minimum rest"]
     BLK --> R4["R4 Under 18"]
-    BLK --> R5["R5 Role qualification"]
-    BLK --> R10["R10 Required certs"]
+    BLK --> R5["R5 Qualification"]
     BLK --> R6["R6 Coverage"]
+    BLK --> R10["R10 Required certs"]
     BLK --> R11["R11 On-site certs"]
+    BLK --> R12["R12 Part-time hours"]
     WRN --> R7["R7 Overtime"]
     WRN --> R8["R8 Labor budget"]
     WRN --> R9["R9 Advance notice"]

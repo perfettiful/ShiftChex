@@ -54,6 +54,9 @@ describe("report tests (UC-11)", () => {
       hours.slice(1).forEach((h, i) => assert.ok(hours[i].hours >= h.hours));
     });
     test("shows who's on more hours than they asked for", () => {
+      // part timers are measured against their cap, not overtime
+      const jordan = buildApp().report.coverage("p3").hours.find((h) => h.name === "Jordan Lee");
+      assert.deepEqual([jordan.partTime, jordan.limit, jordan.hours, jordan.status], [true, 32, 30, "near"]);
       // kai wants 20 at most and he's on 25 this week
       const kai = buildApp().report.coverage("p1").hours.find((h) => h.name === "Kai Obi");
       assert.deepEqual([kai.hours, kai.prefers, kai.overPreference], [25, 20, true]);

@@ -1,9 +1,10 @@
 // domain classes, no imports from other folders
 const { addDays } = require("./format");
 
+// employmentType is "fullTime" or "partTime". part timers have a weekly hour cap (R12)
 class Employee {
-  constructor({ id, name, dateOfBirth, hireDate, maxHoursPreference = null }) {
-    Object.assign(this, { id, name, dateOfBirth, hireDate, maxHoursPreference });
+  constructor({ id, name, dateOfBirth, hireDate, maxHoursPreference = null, employmentType = "fullTime" }) {
+    Object.assign(this, { id, name, dateOfBirth, hireDate, maxHoursPreference, employmentType });
     this.qualifications = [];
     this.availability = [];
     this.timeOff = [];
@@ -18,6 +19,7 @@ class Employee {
     return age;
   }
   isMinorOn(date) { return this.ageOn(date) < 18; }
+  isPartTime() { return this.employmentType === "partTime"; }
 
   // availability for a date = the newest one that started on or before it (UC-01)
   availabilityOn(date) {

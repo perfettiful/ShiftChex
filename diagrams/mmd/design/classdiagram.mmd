@@ -7,7 +7,7 @@ config:
 %% of the five controllers, and only the repository ever sees SQL.
 %% a periodId that's left out means the week being worked on (the first draft)
 classDiagram
-    direction TB
+    direction LR
     class ScheduleController {
         <<Controller>>
         +validate(periodId) Result

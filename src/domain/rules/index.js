@@ -263,6 +263,31 @@ class OnSiteCertRule extends Rule {
   }
 }
 
+// R12
+// part time staff can't go over the weekly cap. flags the shift that tips them over
+class PartTimeHoursRule extends Rule {
+  constructor() { super("R12", "Part-time hours"); }
+  check(ctx) {
+    const out = [], hours = new Map();
+    const cap = ctx.settings.partTimeMaxHours;
+    if (cap == null) return out;
+    for (const s of [...assignedShifts(ctx)].sort(Shift.byStart)) {
+      const e = emp(ctx, s.employeeId);
+      if (!e || !e.isPartTime()) continue;
+      const before = hours.get(e.id) || 0;
+      hours.set(e.id, before + s.hours);
+      if (before <= cap && before + s.hours > cap) {
+        // the total for the whole week, not just up to this shift
+        const total = assignedShifts(ctx).filter((x) => x.employeeId === e.id).reduce((t, x) => t + x.hours, 0);
+        out.push(Violation.blocking(this.id,
+          `${e.name} is part time and would be on ${total} hours this week. Part-time staff can work up to ${cap}.`,
+          s.id, e.id));
+      }
+    }
+    return out;
+  }
+}
+
 module.exports = { Rule, CompositeRule, AvailabilityRule, TimeOffRule, RestRule,
                    MinorHoursRule, QualificationRule, CoverageRule, OvertimeRule,
-                   BudgetRule, NoticeRule, CertificationRule, OnSiteCertRule };
+                   BudgetRule, NoticeRule, CertificationRule, OnSiteCertRule, PartTimeHoursRule };

@@ -289,4 +289,34 @@ describe("rule tests", () => {
       assert.equal(v.length, 1);
     });
   });
+
+  describe("R12 part-time hours", () => {
+    // 8 hour shifts on different days
+    const days = (count, employeeId = "e1") => Array.from({ length: count }, (_, i) =>
+      shift({ employeeId, date: `2026-10-1${2 + i}`, start: "09:00", end: "17:00" }));
+    const jo = person("e1", "Jo", { employmentType: "partTime" });
+    const run = (shifts, employees = [jo], settings = {}) =>
+      new R.PartTimeHoursRule().check(ctx({ shifts, employees, settings }));
+
+    test("under the cap is fine", () => {
+      assert.equal(run(days(3)).length, 0);
+    });
+    test("edge: exactly the cap is fine", () => {
+      assert.equal(run(days(4)).length, 0);
+    });
+    test("over the cap blocks, on the shift that tips it over", () => {
+      const shifts = days(5);
+      const v = run(shifts);
+      assert.equal(v.length, 1);
+      assert.equal(v[0].severity, "blocking");
+      assert.equal(v[0].shiftId, shifts[4].id);
+      assert.match(v[0].message, /Jo is part time and would be on 40 hours this week\. .* up to 32/);
+    });
+    test("full time staff don't have the cap", () => {
+      assert.equal(run(days(5), [person("e1", "Tom")]).length, 0);
+    });
+    test("the cap is a setting", () => {
+      assert.equal(run(days(4), [jo], { partTimeMaxHours: 30 }).length, 1);
+    });
+  });
 });

@@ -12,14 +12,14 @@ describe("repository tests", () => {
   test("runs each migration once", () => {
     const db = open(":memory:");
     assert.deepEqual(migrate(db), ["001_create_tables.sql", "002_add_indexes.sql", "003_add_login.sql",
-      "004_add_notice_date.sql", "005_keep_swap_history.sql"]);
+      "004_add_notice_date.sql", "005_keep_swap_history.sql", "006_add_employment_type.sql"]);
     assert.deepEqual(migrate(db), []);
-    assert.equal(migrations(db).length, 5);
+    assert.equal(migrations(db).length, 6);
   });
 
-  test("loads 17 employees, 8 roles and 7 cert types", () => {
+  test("loads 21 employees, 8 roles and 7 cert types", () => {
     const repo = fresh();
-    assert.equal(repo.employees().length, 17);
+    assert.equal(repo.employees().length, 21);
     assert.equal(repo.roles().length, 8);
     assert.equal(repo.certTypes().length, 7);
   });

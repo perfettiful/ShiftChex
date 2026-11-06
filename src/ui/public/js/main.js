@@ -48,9 +48,10 @@ async function showLogin() {
   app.user = app.S = app.R = app.periodId = null;
   $("#who").hidden = true;
   $("#nav").textContent = "";
-  document.title = "Sign in · ShiftChex";
+  document.title = "ShiftChex · Schedules that check themselves";
   const view = $("#view");
-  view.className = "container";
+  // the landing page runs edge to edge, the hero has its own container inside
+  view.className = "landing";
   view.textContent = "";
   loginView(await getDemoAccounts(), signedIn).forEach((n) => view.append(n));
 }

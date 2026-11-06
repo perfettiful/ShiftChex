@@ -3,7 +3,7 @@
    2. base     elements
    3. layout   containers, header bar, page head, sections, grids
    4. parts    buttons, icons, badges, cards, forms, tables, dialog, toast
-   5. screens  schedule grid, rule panel, report, sign in
+   5. screens  schedule grid, rule panel, swap board, report, landing page
    6. breakpoints, then print
 
    breakpoints: 1360px (rule panel moves under the schedule grid), 1200px laptop,
@@ -172,6 +172,7 @@ button.link[disabled]{background:none}
 .chip.fail{background:var(--redbg);border-color:var(--red-line);color:var(--red)}
 .chip.none{color:var(--mut)}
 .facts{display:grid;gap:2px;margin-top:var(--s-2);color:var(--mut);font-size:var(--fs-sm)}
+.facts .over-cap{color:var(--red);font-weight:600}
 
 /* forms */
 select,input[type=date],input[type=time],input[type=text],input[type=password],textarea{
@@ -280,6 +281,37 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 .v.warning .rid{color:var(--amber)}
 .v p{margin-top:3px}
 
+/* swap board: one fold per group */
+.accordion{display:grid;gap:var(--s-3)}
+.acc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);
+  border-left:4px solid var(--line)}
+.acc.pass{border-left-color:var(--green)}
+.acc.fail{border-left-color:var(--red)}
+.acc.warn{border-left-color:var(--amber)}
+.acc summary{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3) var(--s-4);cursor:pointer;
+  list-style:none;border-radius:var(--radius);user-select:none}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary:hover{background:var(--surface-2)}
+.acc[open] summary{border-bottom:1px solid var(--line-2);border-radius:var(--radius) var(--radius) 0 0}
+.acc-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--pill);flex:none}
+.acc.pass .acc-icon{background:var(--greenbg);color:var(--green)}
+.acc.fail .acc-icon{background:var(--redbg);color:var(--red)}
+.acc.warn .acc-icon{background:var(--amberbg);color:var(--amber)}
+.acc-title{display:grid;flex:1;min-width:0}
+.acc-title b{font-size:var(--fs-md)}
+.acc-count{font-size:var(--fs-sm);font-weight:700;min-width:28px;padding:2px 9px;border-radius:var(--pill);text-align:center}
+.acc-count.pass{background:var(--greenbg);color:var(--green)}
+.acc-count.fail{background:var(--redbg);color:var(--red)}
+.acc-count.warn{background:var(--amberbg);color:var(--amber)}
+.acc-chevron{display:grid;color:var(--mut);transition:transform .15s}
+.acc[open] .acc-chevron{transform:rotate(90deg)}
+.acc-body{padding:var(--s-3)}
+.acc-body .card{box-shadow:none}
+.reasons{list-style:none;margin:var(--s-2) 0 0;padding:0;display:grid;gap:6px}
+.reasons li{display:flex;gap:var(--s-2);align-items:flex-start;color:var(--red);font-size:var(--fs-sm);font-weight:600}
+.reasons .rid{flex:none;font-size:var(--fs-xs);font-weight:700;padding:1px 6px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--red-line);margin-top:1px}
+
 /* report */
 .stats{display:grid;gap:var(--s-4);grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:var(--s-8)}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s-4) var(--s-5);
@@ -303,6 +335,63 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 .auth input{width:100%}
 .auth button[type=submit]{width:100%;padding:9px;justify-self:stretch}
 
+/* landing page. the hero is always dark, whatever the rest of the app does */
+main.landing{padding:0}
+.hero{position:relative;overflow:hidden;isolation:isolate;color:#e6edfa;
+  min-height:min(760px,calc(100vh - var(--bar-height)));display:flex;align-items:center;
+  background:radial-gradient(900px 520px at 78% 30%,#24467f 0%,rgba(36,70,127,0) 70%),
+             linear-gradient(165deg,#0a1322 0%,#122038 55%,#0c1729 100%)}
+.hero-canvas{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1.2s ease}
+.hero-canvas.ready{opacity:1}
+.hero-canvas canvas{display:block;width:100%;height:100%}
+/* keeps the words readable over the tiles */
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(10,19,34,.94) 0%,rgba(10,19,34,.72) 38%,rgba(10,19,34,.12) 70%,rgba(10,19,34,0) 100%),
+             linear-gradient(0deg,rgba(10,19,34,.85) 0%,rgba(10,19,34,0) 28%)}
+.hero-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:var(--s-10) 56px;align-items:center;
+  padding-top:72px;padding-bottom:72px}
+.hero-copy{display:grid;gap:var(--s-5);justify-items:start;max-width:600px}
+.eyebrow{display:inline-flex;align-items:center;gap:var(--s-2);font-size:var(--fs-sm);font-weight:600;color:#b9cdf2;
+  padding:5px 12px;border-radius:var(--pill);background:rgba(120,160,230,.12);border:1px solid rgba(140,175,235,.25)}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:#35d07f;box-shadow:0 0 0 0 rgba(53,208,127,.6);
+  animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(53,208,127,0)}100%{box-shadow:0 0 0 0 rgba(53,208,127,0)}}
+.hero h1{font-size:clamp(38px,5.4vw,64px);line-height:1.04;letter-spacing:-.035em;font-weight:800;color:#fff}
+.hero .shine{background:linear-gradient(92deg,#8fb8ff 0%,#5fd6a0 60%,#b4f0cf 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lede{font-size:clamp(16px,1.6vw,18.5px);line-height:1.6;color:#b3c2dc;max-width:34em}
+.hero-ctas{display:flex;gap:var(--s-3);flex-wrap:wrap}
+.hero-ctas button{padding:11px 18px;font-size:var(--fs-md);border-radius:var(--radius)}
+button.bright{background:#4f86e8;border-color:#4f86e8;box-shadow:0 8px 24px rgba(79,134,232,.35)}
+button.bright:hover{background:#3d74d6;border-color:#3d74d6}
+button.on-dark{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.22);color:#e6edfa}
+button.on-dark:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+.hero-stats{display:flex;gap:var(--s-8);margin:var(--s-2) 0 0;padding-top:var(--s-5);border-top:1px solid rgba(255,255,255,.1)}
+.hero-stats dt{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero-stats dd{margin:0;font-size:var(--fs-sm);color:#8fa3c4}
+.hero .auth{margin:0;max-width:none;width:100%}
+.hero .auth .card{background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.6);
+  box-shadow:0 24px 60px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.hero .auth .card{color:var(--ink)}
+.hero .auth h2{font-size:var(--fs-xl)}
+
+.features{padding-top:64px;padding-bottom:72px}
+.features-head{display:grid;gap:var(--s-1);margin-bottom:var(--s-6)}
+.features-head h2{font-size:var(--fs-xl);letter-spacing:-.01em}
+.features-grid{display:grid;gap:var(--s-4);grid-template-columns:repeat(4,minmax(0,1fr))}
+.feature{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--s-5);
+  box-shadow:var(--shadow-sm);display:grid;gap:var(--s-2);align-content:start;transition:transform .2s,box-shadow .2s}
+.feature:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(16,24,40,.1)}
+.feature-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:var(--radius);
+  background:var(--bluebg);color:var(--blue);margin-bottom:var(--s-1)}
+.feature p{color:var(--mut);font-size:var(--fs-sm);line-height:1.55}
+
+@media (prefers-reduced-motion:reduce){
+  .eyebrow .dot{animation:none}
+  .hero-canvas{transition:none}
+  .feature,.feature:hover{transition:none;transform:none}
+}
+
 /* 6. breakpoints */
 /* the grid and the rule panel only sit side by side when the grid gets its full width */
 @media (max-width:1360px){
@@ -312,8 +401,13 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 }
 @media (max-width:1200px){
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .features-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:900px){
+  .hero-inner{grid-template-columns:minmax(0,1fr);padding-top:var(--s-10);padding-bottom:var(--s-10)}
+  .hero-copy{max-width:none}
+  .hero .auth{max-width:440px}
+  .hero::after{background:linear-gradient(180deg,rgba(10,19,34,.55) 0%,rgba(10,19,34,.82) 55%,rgba(10,19,34,.92) 100%)}
   .bar-inner{flex-wrap:wrap;gap:0 var(--s-4);padding-top:var(--s-2)}
   .brand{margin-right:auto}
   nav{order:3;flex:1 0 100%;overflow-x:auto;min-height:46px;scrollbar-width:none}
@@ -347,6 +441,12 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
   table.avail input[type=time]{width:100%}
   .log li{grid-template-columns:1fr;gap:0}
   .auth{margin-top:var(--s-6)}
+  .hero-ctas,.hero-ctas button{width:100%}
+  .hero-stats{gap:var(--s-6)}
+  .features{padding-top:var(--s-10);padding-bottom:var(--s-10)}
+  .features-grid{grid-template-columns:minmax(0,1fr)}
+  .acc summary{padding:var(--s-3)}
+  .acc-icon{display:none}
 }
 
 /* print the report without the app around it */

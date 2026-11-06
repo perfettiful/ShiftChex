@@ -113,6 +113,7 @@ class SessionController {
       user: { id: user.id, name: user.name, role: user.role },
       employeeId: user.employeeId,
       duties: DUTIES,
+      partTimeMaxHours: this.repo.settings().partTimeMaxHours,
       roles: [...data.rolesById.values()],
       periods: periods.map(weekSummary),
     };
@@ -201,6 +202,7 @@ const shiftFields = (s) => ({ id: s.id, periodId: s.periodId, roleId: s.roleId, 
 // one person as the screens show them, as of a date
 const person = (e, date, rolesById, certTypes) => ({
   id: e.id, name: e.name, isMinor: e.isMinorOn(date), hireDate: e.hireDate,
+  employmentType: e.employmentType,
   qualifications: e.qualifications, maxHoursPreference: e.maxHoursPreference,
   certs: certChecklist(e, date, rolesById, certTypes),
   availability: declaration(e, date),
