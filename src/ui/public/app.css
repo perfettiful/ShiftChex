@@ -73,6 +73,7 @@ nav button{background:none;border:none;border-radius:0;color:var(--mut);padding:
   border-bottom:3px solid transparent;border-top:3px solid transparent}
 nav button:hover{color:var(--ink);background:none;border-color:transparent}
 nav button.on,nav button.on:hover{color:var(--ink);border-bottom-color:var(--blue)}
+nav.landing-nav{margin-left:auto;margin-right:0}
 .badge{display:inline-block;min-width:19px;padding:0 6px;border-radius:var(--pill);
   background:var(--blue);color:#fff;font-size:var(--fs-xs);line-height:19px;text-align:center}
 .who{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-sm);color:var(--mut);white-space:nowrap}
@@ -351,11 +352,6 @@ main.landing{padding:0}
 .hero-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:var(--s-10) 56px;align-items:center;
   padding-top:72px;padding-bottom:72px}
 .hero-copy{display:grid;gap:var(--s-5);justify-items:start;max-width:600px}
-.eyebrow{display:inline-flex;align-items:center;gap:var(--s-2);font-size:var(--fs-sm);font-weight:600;color:#b9cdf2;
-  padding:5px 12px;border-radius:var(--pill);background:rgba(120,160,230,.12);border:1px solid rgba(140,175,235,.25)}
-.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:#35d07f;box-shadow:0 0 0 0 rgba(53,208,127,.6);
-  animation:pulse 2.2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(53,208,127,0)}100%{box-shadow:0 0 0 0 rgba(53,208,127,0)}}
 .hero h1{font-size:clamp(38px,5.4vw,64px);line-height:1.04;letter-spacing:-.035em;font-weight:800;color:#fff}
 .hero .shine{background:linear-gradient(92deg,#8fb8ff 0%,#5fd6a0 60%,#b4f0cf 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -386,8 +382,13 @@ button.on-dark:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,
   background:var(--bluebg);color:var(--blue);margin-bottom:var(--s-1)}
 .feature p{color:var(--mut);font-size:var(--fs-sm);line-height:1.55}
 
+.site-foot{border-top:1px solid var(--line);background:var(--surface)}
+.site-foot-inner{display:flex;align-items:center;gap:var(--s-3) var(--s-6);flex-wrap:wrap;padding-top:var(--s-6);padding-bottom:var(--s-6)}
+.site-foot .brand{font-size:var(--fs-md)}
+.site-foot p{flex:1 1 280px}
+.foot-links{display:flex;gap:var(--s-5)}
+
 @media (prefers-reduced-motion:reduce){
-  .eyebrow .dot{animation:none}
   .hero-canvas{transition:none}
   .feature,.feature:hover{transition:none;transform:none}
 }
@@ -411,6 +412,7 @@ button.on-dark:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,
   .bar-inner{flex-wrap:wrap;gap:0 var(--s-4);padding-top:var(--s-2)}
   .brand{margin-right:auto}
   nav{order:3;flex:1 0 100%;overflow-x:auto;min-height:46px;scrollbar-width:none}
+  nav.landing-nav{order:0;flex:0 1 auto;margin-left:auto}
   nav::-webkit-scrollbar{display:none}
   .page-head{padding-top:var(--s-6)}
   .panel{top:auto}

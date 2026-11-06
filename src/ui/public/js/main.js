@@ -12,7 +12,7 @@ import { myScheduleView } from "./views/mySchedule.js";
 import { availabilityView } from "./views/availability.js";
 import { timeOffView } from "./views/timeOff.js";
 import { boardView } from "./views/board.js";
-import { loginView } from "./views/login.js";
+import { loginView, landingNav } from "./views/login.js";
 
 // [view, page width]. the grid needs room, single column screens read better narrow
 const VIEWS = {
@@ -48,6 +48,9 @@ async function showLogin() {
   app.user = app.S = app.R = app.periodId = null;
   $("#who").hidden = true;
   $("#nav").textContent = "";
+  // the landing links sit on the right, where the signed in user's name usually goes
+  $("#nav").classList.add("landing-nav");
+  landingNav().forEach((n) => $("#nav").append(n));
   document.title = "ShiftChex · Schedules that check themselves";
   const view = $("#view");
   // the landing page runs edge to edge, the hero has its own container inside
@@ -58,6 +61,7 @@ async function showLogin() {
 
 async function signedIn(user) {
   app.user = user;
+  $("#nav").classList.remove("landing-nav");
   app.tab = null;
   app.periodId = null;
   const signedin = $("#signedin");

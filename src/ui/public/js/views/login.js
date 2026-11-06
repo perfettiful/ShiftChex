@@ -68,7 +68,6 @@ export function loginView(accounts, onSignedIn) {
   const hero = el("section", { class: "hero" }, stage,
     el("div", { class: "hero-inner container" },
       el("div", { class: "hero-copy" },
-        el("span", { class: "eyebrow" }, el("span", { class: "dot" }), "Restaurant scheduling, checked"),
         el("h1", {}, "Schedules that ", el("span", { class: "shine" }, "check themselves.")),
         el("p", { class: "lede" },
           `ShiftChex runs every shift against ${RULE_COUNT} labor, rest and certification rules before the week goes out, ` +
@@ -81,8 +80,40 @@ export function loginView(accounts, onSignedIn) {
           stat(RULE_COUNT, "rules"), stat(staff.length, "staff"), stat("1", "manager"))),
       el("div", { class: "auth" }, form)));
 
+  const footer = el("footer", { class: "site-foot" },
+    el("div", { class: "container site-foot-inner" },
+      el("div", { class: "brand" }, logo(), "ShiftChex"),
+      el("p", { class: "muted small" }, "Demo data for a made-up restaurant, Northside Grill."),
+      el("div", { class: "foot-links" },
+        el("button", { class: "link", onclick: () => features.scrollIntoView({ behavior: "smooth" }) }, "What it checks"),
+        el("button", { class: "link", onclick: () => focusSignIn(picker) }, "Sign in"))));
+
   startHero(stage);
-  return [hero, features];
+  return [hero, features, footer];
+}
+
+// the header's links while nobody is signed in. main.js puts them in the bar
+export function landingNav() {
+  const go = (sel) => () => document.querySelector(sel)?.scrollIntoView({ behavior: "smooth" });
+  return [
+    el("button", { onclick: go("#features") }, icon("shield"), "What it checks"),
+    el("button", { onclick: () => focusSignIn(document.querySelector(".hero .auth select")) }, icon("logIn"), "Sign in"),
+  ];
+}
+
+function focusSignIn(picker) {
+  if (!picker) return;
+  picker.closest(".auth").scrollIntoView({ behavior: "smooth", block: "center" });
+  picker.focus({ preventScroll: true });
+}
+
+// same mark as the header
+function logo() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "22"); svg.setAttribute("height", "22");
+  svg.setAttribute("viewBox", "0 0 32 32"); svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML = '<rect width="32" height="32" rx="8" fill="#2f5fa8"/><path d="M9 16.5l4.5 4.5L23 11.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  return svg;
 }
 
 const option = (a) => el("option", { value: a.username }, a.name);
