@@ -59,23 +59,23 @@
   },
   "flowchart": {
     "curve": "linear",
-    "padding": 18,
-    "nodeSpacing": 45,
-    "rankSpacing": 60,
+    "padding": 12,
+    "nodeSpacing": 30,
+    "rankSpacing": 42,
     "htmlLabels": true,
     "useMaxWidth": false
   },
   "class": {
-    "padding": 12,
+    "padding": 8,
     "hideEmptyMembersBox": true,
     "useMaxWidth": false
   },
   "sequence": {
-    "actorMargin": 70,
-    "boxMargin": 22,
-    "messageMargin": 40,
+    "actorMargin": 50,
+    "boxMargin": 12,
+    "messageMargin": 30,
     "mirrorActors": true,
-    "noteMargin": 14,
+    "noteMargin": 10,
     "messageFontSize": 14,
     "actorFontSize": 15,
     "noteFontSize": 13,
@@ -83,21 +83,21 @@
     "wrap": false,
     "width": 110,
     "boxTextMargin": 8,
-    "diagramMarginX": 30,
-    "diagramMarginY": 30,
+    "diagramMarginX": 20,
+    "diagramMarginY": 20,
     "useMaxWidth": false,
     "bottomMarginAdj": 1,
     "height": 65
   },
   "er": {
     "layoutDirection": "LR",
-    "entityPadding": 14,
+    "entityPadding": 10,
     "minEntityWidth": 120,
     "fontSize": 14,
     "useMaxWidth": false
   },
   "state": {
-    "padding": 10,
+    "padding": 8,
     "useMaxWidth": false
   },
   "elk": {

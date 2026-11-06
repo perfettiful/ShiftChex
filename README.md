@@ -148,7 +148,11 @@ panel updates every time you change someone in the grid.
    First Aid from 4pm to 5pm, so R11 blocks it.
 8. Put Omar Farah on Monday's 8am lead shift. R3 blocks it, partly because he
    closes Sunday night on this week's schedule.
-9. Try publishing. The button stays disabled while anything blocks.
+9. Jordan Lee is part time (PT in the dropdown). Put him on Tuesday's empty
+   Server 11am and he's at 30 hours, which is fine. Then put him in Riya's spot
+   on Wednesday Server 5pm: 36 hours is over the 32 hour part-time cap, so R12
+   blocks it. The People tab shows each part timer's hours against the cap.
+10. Try publishing. The button stays disabled while anything blocks.
 
 ### 2. Override a violation (UC-12)
 
@@ -171,6 +175,12 @@ and nobody with a Food Manager cert on Sunday night. Fill them in:
 - Ana Diaz on Sunday Cook
 - Mia Torres on Sunday lead 4pm (she has the Food Manager cert)
 
+Alex Morgan, Jamie Brooks, Casey Ward and Rosa Delgado are fill-ins: trained
+for several roles, every cert, open every day and on no roster. Any empty cell
+has at least one of them who passes, so they're the quick pick when you just
+want to show a shift getting filled (Alex or Rosa covers the Sunday lead and
+the Food Manager gap).
+
 Blocking goes to 0 and you can publish. The 4 warnings left don't stop it: R10
 for Jordan, R7 for Mia (42 hours) and Ana (48), and R9 because the week is 7
 days out instead of 14. Everyone on the week gets a notice, and it shows up on
@@ -190,6 +200,10 @@ These are on this week, which is already published.
    his 10/7 day off was approved since, so the second check fails and Approve is
    greyed out.
 5. As Dana, Take it back pulls her Thursday lunch off the board.
+6. As Jamie Brooks (a fill-in), both posted shifts are claimable.
+
+The board is split into folding groups: what you can claim, what you can't
+(every rule that's stopping you, not just the first), and what you posted.
 
 Unpublishing this week cancels its open swaps, and everyone involved gets a notice.
 
@@ -222,7 +236,7 @@ activity log. Print gives you just the report.
 | UC-04 Post shift for swap | done |
 | UC-05 Claim posted shift | done |
 | UC-06 Build draft schedule | done |
-| UC-07 Validate schedule against rules | done, all 11 rules |
+| UC-07 Validate schedule against rules | done, all 12 rules |
 | UC-08 Publish schedule | done |
 | UC-09 Approve or deny swap | done |
 | UC-10 Approve or deny time off | done |
@@ -241,7 +255,7 @@ src/
   ui/               server.js (API and page routes), public/ (landing page and the app)
   application/      controllers, rule engine, rule factory, event bus, observers
   domain/           domain classes, date formats, notice and audit wording
-  domain/rules/     Rule, CompositeRule and the 11 rules
+  domain/rules/     Rule, CompositeRule and the 12 rules
   persistence/      SQLite repository, migrations, demo data
 scripts/            db:* commands and the diagram renderer
 data/               shiftchex.db
@@ -252,6 +266,11 @@ tests/              the tests
 Pages are centered (1120px, 1440px for the grid, 780px for single column
 screens), and the layout steps down at 1360px, 900px and 640px. Icons are a
 small set from Lucide (ISC license) kept in `public/js/icons.js`.
+
+The landing page's moving background (`public/js/hero3d.js`) loads three.js
+0.160 from jsDelivr. It's the only thing the app pulls from outside. Offline,
+or without WebGL, the hero keeps its plain gradient, and with reduced motion
+turned on it draws one still frame.
 
 ### Diagrams
 
@@ -277,7 +296,11 @@ lists them. After changing a `.mmd` file run `npm run diagrams`.
 
 R1 availability, R2 approved time off, R3 minimum rest, R4 under 18, R5 role
 qualification, R6 coverage, R7 overtime, R8 labor budget, R9 advance notice,
-R10 required certifications, R11 on-site certifications.
+R10 required certifications, R11 on-site certifications, R12 part-time hours.
+
+Everyone is full time or part time. Part timers can't go over
+`partTimeMaxHours` a week (32 for now, it's a setting since the number isn't
+final), and the report measures their hours against that instead of overtime.
 
 R7 to R9 only warn, the rest block publishing. R1 is the only one a manager can
 override. Thresholds (rest hours, curfew, overtime) are settings in the

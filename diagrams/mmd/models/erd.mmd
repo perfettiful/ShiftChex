@@ -1,5 +1,5 @@
 ---
-title: Data Model (SQLite, from migrations 001 to 005)
+title: Data Model (SQLite, from migrations 001 to 006)
 config:
   layout: elk
 ---
@@ -8,7 +8,7 @@ config:
 %% its own, the observers write plain sentences to it. the dashed line
 %% has no foreign key behind it, so a demo reset doesn't sign anyone out
 erDiagram
-    direction TB
+    direction LR
     schedule_period ||--o{ shift : contains
     shift ||--o{ shift_duty : has
     shift ||--o{ swap_request : "traded through"
@@ -33,6 +33,7 @@ erDiagram
         text date_of_birth
         text hire_date
         real max_hours_preference
+        text employment_type "fullTime, partTime (006)"
     }
     role {
         text id PK

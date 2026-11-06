@@ -20,7 +20,9 @@ export function myScheduleView() {
   const total = S.myShifts.reduce((t, s) => t + s.hours, 0);
 
   return [
-    pageHead({ title: me().name, meta: `Today is ${longDate(S.today)} · ${hours(total)} coming up` }),
+    pageHead({ title: me().name, meta: `Today is ${longDate(S.today)} · ${hours(total)} coming up` +
+      (me().employmentType === "partTime" && S.partTimeMaxHours != null
+        ? ` · part time, up to ${S.partTimeMaxHours} hours a week` : " · full time") }),
 
     S.notices.length ? section("Notices", S.notices.length, el("div", { class: "list" }, S.notices.map((n) =>
       el("div", { class: "card notice" }, el("div", { class: "row" },

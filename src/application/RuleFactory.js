@@ -12,6 +12,7 @@ class RuleFactory {
       new R.CertificationRule(),
       new R.CoverageRule(),
       new R.OnSiteCertRule(),
+      new R.PartTimeHoursRule(),
     ]);
     const warnings = new R.CompositeRule("warnings", "Rules that only warn", [
       new R.OvertimeRule(),

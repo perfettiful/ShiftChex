@@ -106,7 +106,7 @@ function slot(shift, problems, draft) {
     onchange: (ev) => act("/api/assign", { shiftId: shift.id, employeeId: ev.target.value || null }, null),
   }, el("option", { value: "" }, "(nobody)"),
      eligible.map((e) => el("option", { value: e.id, selected: e.id === shift.employeeId || null },
-       e.name + (e.isMinor ? " (17)" : ""))));
+       e.name + tags(e))));
 
   const r1 = problems.find((v) => v.ruleId === "R1" && v.severity === "blocking");
   const notes = [];
@@ -124,6 +124,12 @@ function slot(shift, problems, draft) {
   return el("div", { class: cls, title: problems.map((v) => v.message).join("\n") },
     select, notes.length ? el("div", { class: "slot-note" }, notes) : null);
 }
+
+// " (17, PT)" after a name in the dropdown
+const tags = (e) => {
+  const t = [e.isMinor ? "17" : null, e.employmentType === "partTime" ? "PT" : null].filter(Boolean);
+  return t.length ? ` (${t.join(", ")})` : "";
+};
 
 // UC-12. ask for a reason, then assign the same person again with it
 async function override(shift, violation) {

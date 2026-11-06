@@ -104,6 +104,51 @@ describe("week to week", () => {
   });
 });
 
+describe("fill-in staff", () => {
+  const FILL_INS = ["e18", "e19", "e20", "e21"];
+  test("every empty shift on the draft has a fill-in who can take it", () => {
+    const app = buildApp();
+    const period = app.repo.workingPeriod();
+    const empty = period.shifts.filter((s) => !s.isAssigned());
+    assert.equal(empty.length, 4);
+    for (const s of empty) {
+      const ok = FILL_INS.filter((id) => !app.engine.validateAssignment(s, id, period, app.repo).blocking.length);
+      assert.ok(ok.length, `nobody for ${s.date} ${s.roleId} ${s.startTime}`);
+    }
+  });
+  test("they're on no roster, so both posted swaps are open to one of them", () => {
+    const app = buildApp();
+    assert.ok(!app.repo.periods().some((p) => p.shifts.some((s) => FILL_INS.includes(s.employeeId))));
+    const board = app.swaps.board("e19");
+    assert.deepEqual(board.map((b) => [b.swap.id, b.result.blocking.length]), [["w3", 0], ["w4", 0]]);
+  });
+});
+
+describe("part-time cap (R12)", () => {
+  test("jordan is part time. a fifth shift is fine, a sixth goes over 32", () => {
+    const app = buildApp();
+    const period = () => app.repo.workingPeriod();
+    const at = (date, roleId, start, who) => period().shifts.find((s) => s.date === date && s.roleId === roleId
+      && s.startTime === start && s.employeeId === who);
+    // 24 hours to start with. tuesday's empty lunch takes him to 30
+    assert.equal(app.schedule.assign(at("2026-10-13", "server", "11:00", null).id, "e13").ok, true);
+    assert.ok(!app.schedule.validate().blocking.some((v) => v.ruleId === "R12"));
+    // riya's wednesday dinner takes him to 36
+    const wed = at("2026-10-14", "server", "17:00", "e8");
+    const check = app.engine.validateAssignment(wed, "e13", period(), app.repo);
+    assert.deepEqual(ruleIds(check.blocking), ["R12"]);
+    assert.match(check.blocking[0].message, /Jordan Lee is part time and would be on 36 hours/);
+  });
+  test("a part timer's swap claim that goes over the cap is refused", () => {
+    const app = buildApp();
+    app.repo.db.prepare("UPDATE setting SET value = '24' WHERE key = 'partTimeMaxHours'").run();
+    // jordan is on 24 hours this week, dana's thursday lunch would make 30
+    const r = app.swaps.claim("w3", "e13");
+    assert.ok(r.refused);
+    assert.match(r.error, /part time/);
+  });
+});
+
 describe("swap board", () => {
   test("shows the two posted shifts, each checked for whoever is looking", () => {
     const app = buildApp();

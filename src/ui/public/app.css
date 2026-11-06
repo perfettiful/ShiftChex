@@ -3,7 +3,7 @@
    2. base     elements
    3. layout   containers, header bar, page head, sections, grids
    4. parts    buttons, icons, badges, cards, forms, tables, dialog, toast
-   5. screens  schedule grid, rule panel, report, sign in, landing page
+   5. screens  schedule grid, rule panel, swap board, report, sign in, landing page
    6. breakpoints, then print
 
    breakpoints: 1360px (rule panel moves under the schedule grid), 1200px laptop,
@@ -179,6 +179,7 @@ a.button.ghost:hover{background:var(--bluebg);border-color:var(--blue)}
 .chip.fail{background:var(--redbg);border-color:var(--red-line);color:var(--red)}
 .chip.none{color:var(--mut)}
 .facts{display:grid;gap:2px;margin-top:var(--s-2);color:var(--mut);font-size:var(--fs-sm)}
+.facts .over-cap{color:var(--red);font-weight:600}
 
 /* forms */
 select,input[type=date],input[type=time],input[type=text],input[type=password],textarea{
@@ -287,6 +288,37 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 .v.warning .rid{color:var(--amber)}
 .v p{margin-top:3px}
 
+/* swap board: one fold per group */
+.accordion{display:grid;gap:var(--s-3)}
+.acc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);
+  border-left:4px solid var(--line)}
+.acc.pass{border-left-color:var(--green)}
+.acc.fail{border-left-color:var(--red)}
+.acc.warn{border-left-color:var(--amber)}
+.acc summary{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3) var(--s-4);cursor:pointer;
+  list-style:none;border-radius:var(--radius);user-select:none}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary:hover{background:var(--surface-2)}
+.acc[open] summary{border-bottom:1px solid var(--line-2);border-radius:var(--radius) var(--radius) 0 0}
+.acc-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--pill);flex:none}
+.acc.pass .acc-icon{background:var(--greenbg);color:var(--green)}
+.acc.fail .acc-icon{background:var(--redbg);color:var(--red)}
+.acc.warn .acc-icon{background:var(--amberbg);color:var(--amber)}
+.acc-title{display:grid;flex:1;min-width:0}
+.acc-title b{font-size:var(--fs-md)}
+.acc-count{font-size:var(--fs-sm);font-weight:700;min-width:28px;padding:2px 9px;border-radius:var(--pill);text-align:center}
+.acc-count.pass{background:var(--greenbg);color:var(--green)}
+.acc-count.fail{background:var(--redbg);color:var(--red)}
+.acc-count.warn{background:var(--amberbg);color:var(--amber)}
+.acc-chevron{display:grid;color:var(--mut);transition:transform .15s}
+.acc[open] .acc-chevron{transform:rotate(90deg)}
+.acc-body{padding:var(--s-3)}
+.acc-body .card{box-shadow:none}
+.reasons{list-style:none;margin:var(--s-2) 0 0;padding:0;display:grid;gap:6px}
+.reasons li{display:flex;gap:var(--s-2);align-items:flex-start;color:var(--red);font-size:var(--fs-sm);font-weight:600}
+.reasons .rid{flex:none;font-size:var(--fs-xs);font-weight:700;padding:1px 6px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--red-line);margin-top:1px}
+
 /* report */
 .stats{display:grid;gap:var(--s-4);grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:var(--s-8)}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s-4) var(--s-5);
@@ -313,20 +345,68 @@ table.roster td.off{background:repeating-linear-gradient(135deg,var(--surface-2)
 /* landing page and the 404 page. the footer stays at the bottom on a short page */
 body.site{display:flex;flex-direction:column;min-height:100vh}
 body.site main{flex:1}
-.bar-inner > a.button{margin-left:auto}
+.bar-inner > .site-nav{margin-left:auto;display:flex;align-items:center;gap:var(--s-5)}
+.site-nav a:not(.button){color:var(--mut);font-weight:600;text-decoration:none}
+.site-nav a:not(.button):hover{color:var(--ink)}
+/* the 404 page */
 .hero{padding:var(--s-10) 0 var(--s-8);max-width:720px}
 .hero h1{font-size:clamp(30px,5vw,46px);line-height:1.1;letter-spacing:-.025em}
 .hero .lead{font-size:var(--fs-lg);color:var(--ink-2);margin-top:var(--s-4)}
 .hero .actions{margin-top:var(--s-6)}
-.hero .hint{margin-top:var(--s-3)}
-.features{display:grid;gap:var(--s-4);grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
-  padding-bottom:var(--s-10)}
-.feature .icon{color:var(--blue)}
-.feature h3{margin-top:var(--s-3)}
-.feature p{color:var(--mut);font-size:var(--fs-sm);margin-top:var(--s-1)}
-.site-footer{border-top:1px solid var(--line);background:var(--surface);padding:var(--s-5) 0;color:var(--mut);
-  font-size:var(--fs-sm)}
-.site-footer a{color:var(--blue)}
+
+/* the landing page at /. the splash is always dark, whatever the rest of the app does */
+.splash{position:relative;overflow:hidden;isolation:isolate;color:#e6edfa;
+  min-height:min(760px,calc(100vh - var(--bar-height)));display:flex;align-items:center;
+  background:radial-gradient(900px 520px at 78% 30%,#24467f 0%,rgba(36,70,127,0) 70%),
+             linear-gradient(165deg,#0a1322 0%,#122038 55%,#0c1729 100%)}
+.splash-canvas{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1.2s ease}
+.splash-canvas.ready{opacity:1}
+.splash-canvas canvas{display:block;width:100%;height:100%}
+/* keeps the words readable over the tiles */
+.splash::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(10,19,34,.94) 0%,rgba(10,19,34,.72) 38%,rgba(10,19,34,.12) 70%,rgba(10,19,34,0) 100%),
+             linear-gradient(0deg,rgba(10,19,34,.85) 0%,rgba(10,19,34,0) 28%)}
+.splash-inner{padding-top:88px;padding-bottom:88px}
+.splash-copy{display:grid;gap:var(--s-5);justify-items:start;max-width:600px}
+.splash h1{font-size:clamp(38px,5.4vw,64px);line-height:1.04;letter-spacing:-.035em;font-weight:800;color:#fff}
+.splash .shine{background:linear-gradient(92deg,#8fb8ff 0%,#5fd6a0 60%,#b4f0cf 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.splash .lede{font-size:clamp(16px,1.6vw,18.5px);line-height:1.6;color:#b3c2dc;max-width:34em}
+.splash-ctas{display:flex;gap:var(--s-3);flex-wrap:wrap}
+.splash-ctas .button{padding:11px 18px;font-size:var(--fs-md);border-radius:var(--radius)}
+.button.bright{background:#4f86e8;border-color:#4f86e8;box-shadow:0 8px 24px rgba(79,134,232,.35)}
+.button.bright:hover{background:#3d74d6;border-color:#3d74d6}
+.button.on-dark{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.22);color:#e6edfa}
+.button.on-dark:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+.splash-stats{display:flex;gap:var(--s-8);margin:var(--s-2) 0 0;padding-top:var(--s-5);border-top:1px solid rgba(255,255,255,.1)}
+.splash-stats dt{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.splash-stats dd{margin:0;font-size:var(--fs-sm);color:#8fa3c4}
+
+.features{padding-top:64px;padding-bottom:72px}
+.features-head{display:grid;gap:var(--s-1);margin-bottom:var(--s-6)}
+.features-head h2{font-size:var(--fs-xl);letter-spacing:-.01em}
+.features-grid{display:grid;gap:var(--s-4);grid-template-columns:repeat(4,minmax(0,1fr))}
+.feature{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--s-5);
+  box-shadow:var(--shadow-sm);display:grid;gap:var(--s-2);align-content:start;transition:transform .2s,box-shadow .2s}
+.feature:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(16,24,40,.1)}
+.feature-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:var(--radius);
+  background:var(--bluebg);color:var(--blue);margin-bottom:var(--s-1)}
+.feature p{color:var(--mut);font-size:var(--fs-sm);line-height:1.55}
+
+.site-foot{border-top:1px solid var(--line);background:var(--surface)}
+.site-foot-inner{display:flex;align-items:center;gap:var(--s-3) var(--s-6);flex-wrap:wrap;padding-top:var(--s-6);padding-bottom:var(--s-6)}
+.site-foot .brand{font-size:var(--fs-md)}
+.site-foot p{flex:1 1 280px}
+.foot-links{display:flex;gap:var(--s-5)}
+.foot-links a{color:var(--blue);font-weight:600;font-size:var(--fs-sm);text-decoration:none}
+.foot-links a:hover{text-decoration:underline}
+html:has(body.site){scroll-behavior:smooth}
+
+@media (prefers-reduced-motion:reduce){
+  .splash-canvas{transition:none}
+  html:has(body.site){scroll-behavior:auto}
+  .feature,.feature:hover{transition:none;transform:none}
+}
 
 /* 6. breakpoints */
 /* the grid and the rule panel only sit side by side when the grid gets its full width */
@@ -337,8 +417,12 @@ body.site main{flex:1}
 }
 @media (max-width:1200px){
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .features-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:900px){
+  .splash-inner{padding-top:var(--s-10);padding-bottom:var(--s-10)}
+  .splash-copy{max-width:none}
+  .splash::after{background:linear-gradient(180deg,rgba(10,19,34,.55) 0%,rgba(10,19,34,.82) 55%,rgba(10,19,34,.92) 100%)}
   .bar-inner{flex-wrap:wrap;gap:0 var(--s-4);padding-top:var(--s-2)}
   .brand{margin-right:auto}
   nav{order:3;flex:1 0 100%;overflow-x:auto;min-height:46px;scrollbar-width:none}
@@ -372,6 +456,13 @@ body.site main{flex:1}
   table.avail input[type=time]{width:100%}
   .log li{grid-template-columns:1fr;gap:0}
   .auth{margin-top:var(--s-6)}
+  .splash-ctas,.splash-ctas .button{width:100%;justify-content:center}
+  .site-nav a:not(.button){display:none}
+  .splash-stats{gap:var(--s-6)}
+  .features{padding-top:var(--s-10);padding-bottom:var(--s-10)}
+  .features-grid{grid-template-columns:minmax(0,1fr)}
+  .acc summary{padding:var(--s-3)}
+  .acc-icon{display:none}
 }
 
 /* print the report without the app around it */

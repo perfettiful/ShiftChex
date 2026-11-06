@@ -34,6 +34,9 @@ text[class$="TitleText"] { font-size: 20px !important; font-weight: 700; fill: #
 /* label backgrounds plain white, multiplicities readable */
 .labelBkg, .edgeLabel .labelBkg, .edgeLabel rect { background-color: #ffffff !important; fill: #ffffff !important; opacity: 1 !important; }
 .edgeTerminals foreignObject { overflow: visible; }
+/* edge labels are italic here but mermaid measures them upright, so the last letter
+   got cut off ("star" for "start"). let the text run past its box */
+.edgeLabel foreignObject, .edgeLabels foreignObject, foreignObject:has(> .labelBkg), .label foreignObject { overflow: visible; }
 .edgeTerminals .edgeLabel, .edgeTerminals .edgeLabel p { font-size: 13px !important; font-style: normal !important; color: #1a1a1a !important; background: transparent !important; }
 
 /* domain model style: a class with no methods shows name + attributes only */

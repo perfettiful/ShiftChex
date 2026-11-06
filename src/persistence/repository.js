@@ -73,7 +73,7 @@ class SqliteRepository {
     const timeOff = groupBy(this.timeOff(), "employeeId");
     return this.#all("SELECT * FROM employee ORDER BY rowid").map((r) => {
       const e = new Employee({ id: r.id, name: r.name, dateOfBirth: r.date_of_birth,
-        hireDate: r.hire_date, maxHoursPreference: r.max_hours_preference });
+        hireDate: r.hire_date, maxHoursPreference: r.max_hours_preference, employmentType: r.employment_type });
       e.qualifications = (quals.get(r.id) || []).map((q) =>
         new Qualification({ roleId: q.role_id, hourlyRate: q.hourly_rate }));
       e.certs = (certs.get(r.id) || []).map((c) =>
@@ -330,14 +330,14 @@ class SqliteRepository {
         r.certs.forEach((c) => roleCert.run(r.id, c.certTypeId, v(c.onlyIf)));
       });
 
-      const emp = ins(`INSERT INTO employee (id, name, date_of_birth, hire_date, max_hours_preference)
-        VALUES (?, ?, ?, ?, ?)`);
+      const emp = ins(`INSERT INTO employee (id, name, date_of_birth, hire_date, max_hours_preference,
+        employment_type) VALUES (?, ?, ?, ?, ?, ?)`);
       const qual = ins("INSERT INTO qualification (employee_id, role_id, hourly_rate) VALUES (?, ?, ?)");
       const cert = ins("INSERT INTO certificate (employee_id, cert_type_id, issued_on, expires_on) VALUES (?, ?, ?, ?)");
       const avail = ins(`INSERT INTO availability (employee_id, weekday, start_time, end_time, effective_from)
         VALUES (?, ?, ?, ?, ?)`);
       data.employees.forEach((e) => {
-        emp.run(e.id, e.name, e.dateOfBirth, e.hireDate, v(e.maxHoursPreference));
+        emp.run(e.id, e.name, e.dateOfBirth, e.hireDate, v(e.maxHoursPreference), e.employmentType);
         e.qualifications.forEach((q) => qual.run(e.id, q.roleId, q.hourlyRate));
         e.certs.forEach((c) => cert.run(e.id, c.certTypeId, c.issuedOn, c.expiresOn));
         e.availability.forEach((a) => avail.run(e.id, a.weekday, a.startTime, a.endTime, a.effectiveFrom));

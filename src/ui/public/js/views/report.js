@@ -36,8 +36,8 @@ export function reportView() {
     el("div", { class: "stats" },
       stat("calendar", "Open shifts", open, open ? "bad" : "good", open ? `on ${plural(openDays, "day")}` : "every shift is covered"),
       stat("dollar", "Projected labor", money(R.labor.cost), pct > 100 ? "bad" : "", `${pct}% of the ${money(R.labor.budget)} budget`),
-      stat("clock", "Over overtime", over, over ? "bad" : near ? "warn" : "good",
-        `${near} more at ${R.nearOvertime}+ of ${R.overtimeThreshold} hours`),
+      stat("clock", "Over their hours", over, over ? "bad" : near ? "warn" : "good",
+        `${near} more close to their limit`),
       stat("shield", "Cert problems", urgent, urgent ? "bad" : "good",
         `${R.certs.length - urgent} more due in the next ${R.certWindowDays} days`)),
 
@@ -63,11 +63,13 @@ export function reportView() {
         }),
         ["Total", num(R.labor.byRole.reduce((t, r) => t + r.hours, 0)), num(money(R.labor.cost)), ""])),
 
-      section("Hours this week", `overtime after ${R.overtimeThreshold}`, table(
+      section("Hours this week", `overtime after ${R.overtimeThreshold}` +
+        (R.partTimeMaxHours != null ? `, part time up to ${R.partTimeMaxHours}` : ""), table(
         ["Person", "Shifts", "Hours", ""],
         R.hours.map((h) => [
-          el("span", {}, h.name, h.overPreference
-            ? el("div", { class: "muted small" }, `asked for ${h.prefers} at most`) : null),
+          el("span", {}, h.name,
+            h.partTime ? el("div", { class: "muted small" }, `part time, up to ${h.limit}`) : null,
+            h.overPreference ? el("div", { class: "muted small" }, `asked for ${h.prefers} at most`) : null),
           num(h.shifts), num(h.hours),
           el("span", { class: "pill " + HOURS[h.status][0] }, HOURS[h.status][1])]))),
 

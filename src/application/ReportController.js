@@ -1,6 +1,7 @@
 const { addDays } = require("../domain/format");
 
-// someone at 90% of the overtime threshold (36 of 40 hours) shows up as close to it
+// someone at 90% of their limit (36 of 40 hours, or 28.8 of a 32 hour part-time cap)
+// shows up as close to it
 const NEAR_OVERTIME = 0.9;
 // certs that run out or come due within this many days of today
 const CERT_WINDOW_DAYS = 30;
@@ -16,7 +17,7 @@ class ReportController {
     if (!period) return { error: "No such week." };
     const byId = this.repo.employeesById();
     const rolesById = this.repo.rolesById();
-    const { overtimeThreshold } = this.repo.settings();
+    const { overtimeThreshold, partTimeMaxHours } = this.repo.settings();
     const today = this.repo.today();
     const costOf = (shifts) => Math.round(period.laborCost(byId, shifts));
 
@@ -48,16 +49,19 @@ class ReportController {
     });
     const hours = [...totals].map(([employeeId, t]) => {
       const e = byId.get(employeeId);
-      const status = t.hours > overtimeThreshold ? "over"
-        : t.hours >= overtimeThreshold * NEAR_OVERTIME ? "near" : "ok";
-      return { employeeId, name: e.name, hours: t.hours, shifts: t.shifts, status,
+      // part timers are measured against their cap instead of overtime
+      const partTime = e.isPartTime() && partTimeMaxHours != null;
+      const limit = partTime ? partTimeMaxHours : overtimeThreshold;
+      const status = t.hours > limit ? "over" : t.hours >= limit * NEAR_OVERTIME ? "near" : "ok";
+      return { employeeId, name: e.name, hours: t.hours, shifts: t.shifts, status, partTime, limit,
                prefers: e.maxHoursPreference, overPreference: e.maxHoursPreference != null && t.hours > e.maxHoursPreference };
     }).sort((a, b) => b.hours - a.hours || a.name.localeCompare(b.name));
 
     return {
       period: { id: period.id, startDate: period.startDate, endDate: period.endDate,
                 status: period.status, budget: period.budget },
-      today, overtimeThreshold, nearOvertime: overtimeThreshold * NEAR_OVERTIME, certWindowDays: CERT_WINDOW_DAYS,
+      today, overtimeThreshold, nearOvertime: overtimeThreshold * NEAR_OVERTIME, partTimeMaxHours,
+      certWindowDays: CERT_WINDOW_DAYS,
       days,
       labor: { cost, budget: period.budget, byRole },
       hours,

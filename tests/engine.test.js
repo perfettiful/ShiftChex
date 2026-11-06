@@ -7,7 +7,7 @@ const { ctx, shift, buildApp, publishable, find, ruleIds } = require("./helpers"
 describe("engine tests", () => {
   test("the factory gives one rule, split into blocking and warnings", () => {
     const [blocking, warnings] = RuleFactory.rulesFor().children;
-    assert.equal(blocking.children.length, 8);
+    assert.equal(blocking.children.length, 9);
     assert.equal(warnings.children.length, 3);
   });
 

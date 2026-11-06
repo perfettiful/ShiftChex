@@ -63,7 +63,8 @@ function seed() {
     new Role({ id: "door",      name: "Door / security",      certs: ["alcohol"] }),
   ];
 
-  // certs: list of cert ids, or [id, issuedOn] to override the default date
+  // certs: list of cert ids, or [id, issuedOn] to override the default date.
+  // partTime: true caps them at the partTimeMaxHours setting (R12), everyone else is full time
   const people = [
     { id: "e1",  name: "Dana Park",    dob: "1998-04-02", quals: [["server", 17], ["host", 15]],
       certs: [...FLOOR, "firstAid"] },
@@ -77,7 +78,7 @@ function seed() {
       certs: [...KITCHEN, "allergen", ["alcohol", "2023-10-15"], ["alcohol", "2026-10-17"]] },
     // alcohol cert lapsed 9/30, fine for dish but not the bar
     { id: "e5",  name: "Marcus Okoye", dob: "1993-02-27", quals: [["bartender", 22], ["dish", 16]],
-      certs: [...KITCHEN, "allergen", ["alcohol", "2023-09-30"]] },
+      certs: [...KITCHEN, "allergen", ["alcohol", "2023-09-30"]], partTime: true },
     { id: "e6",  name: "Ana Diaz",     dob: "1991-09-11", quals: [["cook", 20]],
       certs: [...KITCHEN, "foodManager", "firstAid"] },
     { id: "e7",  name: "Ben Cole",     dob: "1997-05-30", quals: [["cook", 19.5], ["server", 17]],
@@ -86,7 +87,7 @@ function seed() {
       certs: FLOOR },
     // under 18 during this period -> triggers R4. no alcohol cert either
     { id: "e9",  name: "Kai Obi",      dob: "2009-03-14", quals: [["host", 14], ["server", 15]],
-      certs: [...KITCHEN, "allergen"], maxHours: 20 },
+      certs: [...KITCHEN, "allergen"], maxHours: 20, partTime: true },
     // food manager cert runs out wed 10/14, renewal exam is that same day so there's no gap
     { id: "e10", name: "Grace Kim",    dob: "1990-06-21", quals: [["lead", 24], ["server", 18]],
       certs: [...FLOOR, ["foodManager", "2021-10-14"], ["foodManager", "2026-10-14"], "firstAid"] },
@@ -98,21 +99,31 @@ function seed() {
     // new hire still inside the grace windows. his classes are booked before each one closes
     { id: "e13", name: "Jordan Lee",   dob: "2003-08-17", hired: "2026-09-21", quals: [["server", 16]],
       certs: [["medical", "2026-09-18"], ["hygiene", "2026-09-18"], ["foodHandler", "2026-10-19"],
-              ["allergen", "2026-10-19"], ["alcohol", "2026-11-16"]], maxHours: 30 },
+              ["allergen", "2026-10-19"], ["alcohol", "2026-11-16"]], maxHours: 30, partTime: true },
     // hired 8/20, food handler window closed 9/19
     { id: "e14", name: "Priya Shah",   dob: "2004-02-05", hired: "2026-08-20", quals: [["dish", 15], ["busser", 14]],
-      certs: [["medical", "2026-08-15"], ["hygiene", "2026-08-15"]] },
+      certs: [["medical", "2026-08-15"], ["hygiene", "2026-08-15"]], partTime: true },
     { id: "e15", name: "Luis Vega",    dob: "2001-01-26", quals: [["dish", 15]],
       certs: KITCHEN },
     { id: "e16", name: "Theo Brandt",  dob: "1992-12-12", quals: [["door", 18]],
-      certs: ["alcohol"] },
+      certs: ["alcohol"], partTime: true },
     { id: "e17", name: "Nora Quinn",   dob: "2002-05-19", quals: [["busser", 14]],
       certs: [...KITCHEN, "alcohol"] },
+    // fill-ins. trained for several roles, every cert, open every day and on no roster,
+    // so there's always somebody to pick for an empty shift or a swap
+    { id: "e18", name: "Alex Morgan",  dob: "1993-08-04", quals: [["lead", 23], ["cook", 19], ["server", 17]],
+      certs: [...FLOOR, "foodManager", "firstAid"] },
+    { id: "e19", name: "Jamie Brooks", dob: "1998-02-14", quals: [["server", 17], ["bartender", 21], ["host", 15]],
+      certs: [...FLOOR, "firstAid"], partTime: true },
+    { id: "e20", name: "Casey Ward",   dob: "2001-06-09", quals: [["dish", 15], ["busser", 14], ["host", 14], ["door", 17]],
+      certs: FLOOR, partTime: true },
+    { id: "e21", name: "Rosa Delgado", dob: "1989-11-27", quals: [["lead", 24], ["cook", 20], ["bartender", 21]],
+      certs: [...FLOOR, "foodManager", "firstAid"] },
   ];
 
   const employees = people.map((p) => {
     const e = new Employee({ id: p.id, name: p.name, dateOfBirth: p.dob, hireDate: p.hired || "2025-06-01",
-      maxHoursPreference: p.maxHours ?? null });
+      maxHoursPreference: p.maxHours ?? null, employmentType: p.partTime ? "partTime" : "fullTime" });
     e.qualifications = p.quals.map(([roleId, hourlyRate]) => new Qualification({ roleId, hourlyRate }));
     e.certs = p.certs.map((c) => {
       const [certTypeId, issuedOn = ISSUED[certTypeId]] = Array.isArray(c) ? c : [c];
@@ -287,6 +298,8 @@ function seed() {
       minorMaxDailyHours: 8,
       minorCurfew: "22:00",
       noticeDays: 14,
+      // weekly cap for part time staff. not settled yet, so it's a setting
+      partTimeMaxHours: 32,
       // somebody on site with each of these the whole time
       siteCerts: ["foodManager", "firstAid"],
     },

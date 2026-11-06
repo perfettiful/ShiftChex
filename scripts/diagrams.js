@@ -2,6 +2,7 @@
 // the folders under images/ match the ones under mmd/
 //   npm run diagrams                     all of them
 //   npm run diagrams -- erd patterns/    only paths that contain erd or patterns/
+//   DIAGRAM_SCALE=2 npm run diagrams     smaller files (default is 4x, sharp when zoomed or printed)
 // uses mermaid-cli through npx, so nothing gets added to package.json.
 // first run downloads it (and chromium, unless chrome is already installed)
 const fs = require("fs");
@@ -14,6 +15,7 @@ const ROOT = path.join(__dirname, "..", "diagrams");
 const SRC = path.join(ROOT, "mmd");
 const OUT = path.join(ROOT, "images");
 const CLI = "@mermaid-js/mermaid-cli@12";
+const SCALE = Number(process.env.DIAGRAM_SCALE) || 4;
 
 // use the chrome that's already installed instead of downloading another one
 const CHROME = [
@@ -25,7 +27,7 @@ const CHROME = [
 
 const env = { ...process.env };
 const args = ["-c", path.join(ROOT, "mermaid.config.json"), "-C", path.join(ROOT, "mermaid.css"),
-              "-s", "2", "-b", "white"];
+              "-s", String(SCALE), "-b", "white"];
 if (CHROME) {
   const config = path.join(os.tmpdir(), "shiftchex-puppeteer.json");
   fs.writeFileSync(config, JSON.stringify({ executablePath: CHROME, args: ["--no-sandbox"] }));
@@ -48,7 +50,8 @@ for (const file of files) {
   const run = spawnSync("npx", ["-y", CLI, "-q", "-i", path.join(SRC, file), "-o", out, ...args],
     { env, encoding: "utf8", shell: process.platform === "win32" });
   if (run.status === 0) {
-    trim(out);
+    // the same 20px margin on every side, whatever the scale
+    trim(out, 20 * SCALE);
     console.log(`  ${file} -> images/${rel}`);
   } else {
     failed++;

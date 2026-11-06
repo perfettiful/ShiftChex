@@ -10,7 +10,7 @@ config:
 flowchart TB
     ui["<b>ui</b><br/>server.js, routes + role check<br/>public/ views"]
     application["<b>application</b><br/>Schedule, Swap, Availability, Report, Session controllers<br/>RuleEngine, RuleFactory, EventBus, observers, wiring"]
-    domain["<b>domain</b><br/>Employee, Shift, SchedulePeriod, SwapRequest ...<br/>rules/ Rule, CompositeRule, R1 to R11"]
+    domain["<b>domain</b><br/>Employee, Shift, SchedulePeriod, SwapRequest ...<br/>rules/ Rule, CompositeRule, R1 to R12"]
     persistence["<b>persistence</b><br/>SqliteRepository, db.js<br/>migrations/*.sql, seed.js"]
     scripts["<b>scripts</b><br/>db.js, diagrams.js, trim-png.js"]
     db[("data/shiftchex.db")]
