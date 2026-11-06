@@ -5,6 +5,7 @@ export const app = {
   user: null,      // who's signed in, from /api/me or the login
   tab: null,
   periodId: null,  // the week the manager is looking at
+  week: null,      // a ?week= start date from the address bar, until it's been picked
 };
 
 // views call reload() after they change something. main.js plugs in the real loader

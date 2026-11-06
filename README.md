@@ -22,8 +22,14 @@ git update-index --skip-worktree data/shiftchex.db
 npm start
 ```
 
-That opens http://localhost:3000 in your browser. Ctrl+C stops it. Use
-`node src/ui/server.js` if you don't want a new tab every time.
+That opens the landing page at http://localhost:3000, and "Try the demo" goes
+to the app. Ctrl+C stops it. Use `node src/ui/server.js` if you don't want a new
+tab every time.
+
+Each screen has its own address: `/login`, then `/schedule`, `/approvals`,
+`/report` and `/people` for the manager, and `/my-schedule`, `/availability`,
+`/time-off` and `/swap-board` for employees. The weekly screens keep the week in
+the address too, like `/report?week=2026-11-23`.
 
 The database file is committed so everyone starts with the same demo data. The
 `update-index` line stops git from picking up your local changes to it. If the
@@ -84,7 +90,8 @@ few use a temp file), so they never touch `data/shiftchex.db`.
 `.github/workflows/ci-cd.yml` runs the tests on every push. On `main` it also
 builds the Docker image, pushes it to the DigitalOcean container registry (and
 makes a free one if there isn't one), then creates or updates the App Platform
-app from `.do/app.yaml`. The live URL ends up on the run's summary page.
+app from `.do/app.yaml`. It's live at https://shiftchex.work, whose DNS is at
+Cloudflare (CNAME records to the app's `ondigitalocean.app` address, DNS only).
 
 It needs one repo secret, a DigitalOcean API token with access to apps and the
 container registry:
@@ -245,7 +252,7 @@ dependencies only point down: `ui` uses `application`, which uses `domain`, and
 
 ```
 src/
-  ui/               server.js (API routes), public/ (the screens)
+  ui/               server.js (API and page routes), public/ (landing page and the app)
   application/      controllers, rule engine, rule factory, event bus, observers
   domain/           domain classes, date formats, notice and audit wording
   domain/rules/     Rule, CompositeRule and the 12 rules

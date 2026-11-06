@@ -3,27 +3,105 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ShiftChex</title>
+<title>ShiftChex · Schedules that check themselves</title>
+<meta name="description" content="ShiftChex checks every shift against availability, time off, rest, under 18 limits, certifications and part-time caps while the week is being built.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5fa8'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/app.css">
 </head>
-<body>
+<body class="site">
 <header class="bar">
-  <div class="container wide bar-inner">
-    <div class="brand">
+  <div class="container bar-inner">
+    <a class="brand" href="/">
       <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2f5fa8"/><path d="M9 16.5l4.5 4.5L23 11.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       ShiftChex
-    </div>
-    <nav id="nav" aria-label="Screens"></nav>
-    <div class="who" id="who" hidden>
-      <span id="signedin"></span>
-      <button id="reset" class="quiet sm" title="Put the demo data back" aria-label="Reset demo"><span class="label">Reset demo</span></button>
-      <button id="signout" class="ghost sm" aria-label="Sign out"><span class="label">Sign out</span></button>
+    </a>
+    <div class="site-nav">
+      <a href="#features">What it checks</a>
+      <a href="https://github.com/perfettiful/ShiftChex">GitHub</a>
+      <a class="button" href="/login">Sign in</a>
     </div>
   </div>
 </header>
-<main id="view" class="container"><p class="muted loading">Loading…</p></main>
-<div id="toast" class="toast" role="status" hidden></div>
-<script type="module" src="/js/main.js"></script>
+
+<main>
+  <section class="splash">
+    <!-- hero3d.js draws the moving tiles in here. without it the gradient stays -->
+    <div class="splash-canvas" aria-hidden="true"></div>
+    <div class="splash-inner container">
+      <div class="splash-copy">
+        <h1>Schedules that <span class="shine">check themselves.</span></h1>
+        <p class="lede">ShiftChex runs every shift against 12 labor, rest and certification rules before the week
+          goes out, so nobody gets booked into a violation.</p>
+        <div class="splash-ctas">
+          <a class="button bright" href="/login">Try the demo</a>
+          <a class="button on-dark" href="https://github.com/perfettiful/ShiftChex">See the code</a>
+        </div>
+        <dl class="splash-stats">
+          <div><dt>12</dt><dd>rules</dd></div>
+          <div><dt id="staff-count">21</dt><dd>staff</dd></div>
+          <div><dt>1</dt><dd>manager</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="features container" id="features">
+    <div class="features-head">
+      <h2>What it checks for you</h2>
+      <p class="muted">Everything runs on the server, so a schedule can't get around a rule. The demo fills in the
+        sign in for you, as the manager or any employee. Everyone in it is made up.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <span class="feature-icon"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <h3>Rule check on every change</h3>
+        <p>Availability, rest, under 18 hours, certifications and part-time caps are checked each time a cell
+          changes. Publish stays locked while anything blocks.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></span>
+        <h3>A swap board that checks first</h3>
+        <p>Staff post shifts and claim each other's. Each claim is checked against the person taking it, then
+          again when the manager approves.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span>
+        <h3>Overrides with a reason</h3>
+        <p>When someone agrees to work outside their hours, the manager can set that one rule aside. The reason
+          goes in the activity log.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+        <h3>Coverage and labor report</h3>
+        <p>Open shifts by day, labor against budget, everyone's hours against their limit, and certs coming
+          due.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="container site-foot-inner">
+    <a class="brand" href="/">
+      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2f5fa8"/><path d="M9 16.5l4.5 4.5L23 11.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ShiftChex
+    </a>
+    <p class="muted small">Demo data for a made-up restaurant, Northside Grill.</p>
+    <div class="foot-links">
+      <a href="#features">What it checks</a>
+      <a href="https://github.com/perfettiful/ShiftChex">GitHub</a>
+      <a href="/login">Sign in</a>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+  import { startHero } from "/js/hero3d.js";
+  startHero(document.querySelector(".splash-canvas"));
+  // the real head count, in case the demo data changes. the 21 above stays if this fails
+  fetch("/api/demo-accounts").then((r) => r.json())
+    .then((a) => { document.getElementById("staff-count").textContent = a.filter((x) => x.role !== "manager").length; })
+    .catch(() => {});
+</script>
 </body>
 </html>

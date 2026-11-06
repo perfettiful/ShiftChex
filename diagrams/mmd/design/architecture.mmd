@@ -1,11 +1,15 @@
 ---
 title: Runtime Architecture (Elaboration 2)
+config:
+  flowchart:
+    wrappingWidth: 320
 ---
 %% what actually runs. one node process serves the pages and the api,
 %% and the only thing it talks to is a sqlite file on disk
 flowchart LR
     subgraph Browser["Browser"]
-        V["Views<br/>schedule builder, approvals, report,<br/>swap board, availability, people"]
+        L["Landing page<br/>/"]
+        V["App screens<br/>/schedule, /approvals<br/>/report, /people<br/>/my-schedule, /availability<br/>/time-off, /swap-board"]
     end
     subgraph Node["Node 22 process (npm start)"]
         S["server.js<br/>routes, sign in, role check"]
@@ -19,6 +23,7 @@ flowchart LR
     DB[("data/shiftchex.db<br/>SQLite file")]
     M["migrations/*.sql"]
 
+    L -- "Try the demo" --> V
     V -- "fetch /api/* (JSON)" --> S
     R -- "node:sqlite" --> DB
     M -. "applied once each on start" .-> DB
