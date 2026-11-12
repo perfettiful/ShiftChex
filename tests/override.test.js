@@ -43,6 +43,18 @@ describe("override tests (UC-12)", () => {
       "Overrode R1 for Ben Cole on Sun, 10/18 Cook / prep 8am to 4pm. Reason: He offered to cover it");
   });
 
+  test("assigning first and overriding after works, like the UI does it", () => {
+    const app = buildApp();
+    const id = benSunday(app).id;
+    app.schedule.assign(id, "e7");
+    const { ok, error, result } = app.schedule.assign(id, "e7", "He offered to cover it");
+    assert.equal(error, undefined);
+    assert.ok(ok);
+    assert.deepEqual(blockingOn(result, id), []);
+    assert.ok(result.warnings.some((v) => v.ruleId === "R1" && v.shiftId === id));
+    assert.equal(saved(app, id).overrideReason, "He offered to cover it");
+  });
+
   test("3a: a blank reason is refused and nothing changes", () => {
     const app = buildApp();
     const id = benSunday(app).id;

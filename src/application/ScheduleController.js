@@ -36,9 +36,10 @@ class ScheduleController {
       reason = String(overrideReason).trim();
       // UC-12 extension 3a
       if (!reason) return { error: "Give a reason for the override." };
-      // only R1 can be overridden, and only when it's actually blocking this person here
-      const check = this.engine.validateAssignment(shift, employeeId, period, this.repo);
-      if (!check.blocking.some((v) => v.ruleId === "R1" && v.shiftId === shift.id)) {
+      // only R1 can be overridden, and only when it's actually blocking this person here.
+      // full check, not just what's new, since they may already be on the shift
+      const check = this.engine.validateWith(shift, employeeId, period, this.repo);
+      if (!check.blocking.some((v) => v.ruleId === "R1" && v.shiftId === shift.id && v.employeeId === employeeId)) {
         return { error: `${employee.name} is available for that shift, so there's nothing to override.` };
       }
     }
