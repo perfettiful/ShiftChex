@@ -15,13 +15,23 @@ class RuleEngine {
   // what putting employeeId on this shift would change (claims, approvals, overrides).
   // compares the week before and after, and keeps what's new for that person or the whole week
   validateAssignment(shift, employeeId, period, repo) {
+    const ctx = this.#context(period, repo);
+    const before = new Set(this.root.check(ctx).map(key));
+    const after = this.#checkWith(ctx, shift, employeeId);
+    return result(after.filter((v) => !before.has(key(v)) && (v.employeeId === employeeId || v.employeeId === null)));
+  }
+
+  // everything wrong with the week if employeeId were on this shift, new or not. used for
+  // overrides, where the person may already be on the shift and R1 is already showing
+  validateWith(shift, employeeId, period, repo) {
+    return result(this.#checkWith(this.#context(period, repo), shift, employeeId));
+  }
+
+  #checkWith(ctx, shift, employeeId) {
     const hypothetical = Object.create(Object.getPrototypeOf(shift));
     // an override belongs to the person it was given for, so it doesn't come along
     Object.assign(hypothetical, shift, { employeeId, overrideReason: null });
-    const ctx = this.#context(period, repo);
-    const before = new Set(this.root.check(ctx).map(key));
-    const after = this.root.check({ ...ctx, shifts: period.shifts.map((s) => (s.id === shift.id ? hypothetical : s)) });
-    return result(after.filter((v) => !before.has(key(v)) && (v.employeeId === employeeId || v.employeeId === null)));
+    return this.root.check({ ...ctx, shifts: ctx.shifts.map((s) => (s.id === shift.id ? hypothetical : s)) });
   }
 
   #context(period, repo) {
